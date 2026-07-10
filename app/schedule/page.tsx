@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import ThemeToggle from "@/components/ThemeToggle";
 import LogoutLink from "@/components/LogoutLink";
 import ScheduleGrid from "@/components/ScheduleGrid";
+import ShareScheduleButton from "@/components/ShareScheduleButton";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,7 @@ export default async function SchedulePage() {
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <ShareScheduleButton />
           <ThemeToggle />
           <LogoutLink />
         </div>
