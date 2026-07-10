@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { fetchAllSubmissions } from "@/lib/submissions-view";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -31,16 +32,23 @@ export default async function ReviewPage() {
           flexShrink: 0,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-          <div
-            className="heading"
-            style={{ width: 30, height: 30, borderRadius: 8, background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 14 }}
-          >
-            DF
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          {user.role === "admin" && (
+            <Link href="/admin" style={{ color: "var(--muted)", fontSize: 13, fontWeight: 600 }}>
+              &larr; Dashboard
+            </Link>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+            <div
+              className="heading"
+              style={{ width: 30, height: 30, borderRadius: 8, background: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 14 }}
+            >
+              DF
+            </div>
+            <span className="heading" style={{ fontWeight: 700, fontSize: 15 }}>
+              Review Queue
+            </span>
           </div>
-          <span className="heading" style={{ fontWeight: 700, fontSize: 15 }}>
-            Review Queue
-          </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <ThemeToggle />
