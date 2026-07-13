@@ -11,6 +11,7 @@ export type StaffUser = {
 export type SessionStatus = "pending" | "approved" | "rejected";
 export type SpeakerStatus = "pending" | "approved" | "confirmed" | "rejected";
 export type SubmissionKind = "session" | "speaker" | "both";
+export type SpeakerLocation = "International" | "GCC" | "UAE" | "DM";
 
 export type Category = { id: string; name: string };
 export type SessionType = { id: string; name: string };
@@ -25,6 +26,8 @@ export type Speaker = {
   contact: string | null;
   bio: string | null;
   topic: string;
+  location: SpeakerLocation | null;
+  affiliation: string | null;
   status: SpeakerStatus;
   review_comment: string | null;
 };
@@ -50,6 +53,5 @@ export type Submission = {
   submitter_email: string;
   submitter_phone: string | null;
   org_section_id: string | null;
-  link_speakers_to_session: boolean;
   created_at: string;
 };

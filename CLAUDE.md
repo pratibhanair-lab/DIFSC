@@ -25,7 +25,11 @@ public-facing (pushing, deploying, deleting data).
   data. Source of truth for the data model; read this before touching DB
   logic. New schema changes should be added as a new `NNNN_*.sql` file here
   (the user runs these manually in Supabase's SQL Editor — no migration
-  tooling is wired up).
+  tooling is wired up). `0002_tweaks.sql` (applied) added `speakers.location`
+  / `speakers.affiliation`, dropped the `sessions.submission_id` unique
+  constraint (a submission can now hold multiple sessions), and dropped
+  `submissions.link_speakers_to_session` (obsolete now that speakers nest
+  under a specific session block in the form instead of a yes/no flag).
 - `lib/types.ts` — shared TS types mirroring the schema.
 - `lib/supabase/server.ts` — auth-only client (cookie-bound, anon key). Only
   used for login/logout/`getUser()`.
@@ -36,16 +40,40 @@ public-facing (pushing, deploying, deleting data).
 - `lib/actions/*.ts` — all Server Actions (`"use server"`), one file per
   feature area: `submissions`, `auth`, `referees`, `lookups`, `review`,
   `schedule`.
-- `lib/submissions-view.ts` / `lib/schedule-view.ts` — read-model helpers
-  that join raw tables into the shapes the UI needs, including the derived
-  `overallStatus`. Reuse these instead of re-querying tables directly.
+- `lib/submissions-view.ts` / `lib/schedule-view.ts` / `lib/approved-view.ts`
+  — read-model helpers that join raw tables into the shapes the UI needs.
+  Reuse these instead of re-querying tables directly. A `SubmissionView` now
+  holds `sessions: SessionView[]` (a submission can have several session
+  topics, each with its own nested `speakers`) plus a top-level `speakers`
+  array for speaker-only submissions not tied to any session. `overallStatus`
+  is still the one derived status driving the review queue and counts.
+- `components/SessionReviewCard.tsx` — self-contained per-session
+  approve/revise/reject card (mirrors `SpeakerCard.tsx`'s pattern), reused by
+  both `ReviewQueue.tsx` and `SubmissionDetailModal.tsx` since a submission
+  can now contain multiple sessions.
 - `proxy.ts` — route protection for `/admin`, `/review`, `/schedule`
   (optimistic redirect only). The real role check is `requireRole()`, called
-  on every protected page and Server Action.
+  on every protected page and Server Action. `/programme` and `/approved`
+  are deliberately **not** in this list — see Routes below.
+- `components/PublicScheduleGrid.tsx` — read-only version of
+  `components/ScheduleGrid.tsx` for `/programme`: same visual layout, no
+  drag/drop, no edit buttons, and it only renders `cardsByDay` (never the
+  `unscheduled` or `speakerPool` parts of `ScheduleBoard`, which are
+  internal working data and must stay off any public page).
+- `components/PublicApprovedListing.tsx` — same public/admin split, for
+  `/approved`: read-only cards, no Server Action calls, no decision buttons.
+  Any new public-facing view should follow this pattern rather than reusing
+  an admin component that has action buttons wired in.
+- `components/ShareScheduleButton.tsx` — client component on the admin
+  `/schedule` page that copies the `/programme` URL to the clipboard.
 - Routes: `/` (public form), `/login`, `/admin` (+ `/admin/submissions`,
   `/admin/setup` = categories/session types/org sections/halls,
   `/admin/referees`), `/review` (admin + referee shared queue), `/schedule`
-  (admin only, own header, not under `/admin`'s layout).
+  (admin only, own header, not under `/admin`'s layout), `/programme`
+  (public, no login, read-only conference programme — shareable link,
+  reuses `fetchScheduleBoard`), `/approved` (public, no login — every
+  approved session + speaker regardless of whether it's been scheduled yet,
+  reuses `fetchApprovedListing`).
 
 ## Conventions
 
@@ -63,6 +91,14 @@ public-facing (pushing, deploying, deleting data).
   (`lib/submissions-view.ts`) since `sessions.status` and per-speaker
   `speakers.status` are tracked independently — don't add a redundant status
   column to `submissions` itself.
+- The scheduler's speaker pool (draggable onto the grid) only shows speakers
+  with `status === "confirmed"` — being `"approved"` alone isn't enough. An
+  admin/referee moves a speaker from approved to confirmed with the "Mark
+  confirmed" button on `SpeakerCard` (`review.ts: decideSpeaker`).
+- The public form remembers a returning submitter's name/email/phone/org
+  section via a plain browser cookie (`difsc_submitter`, set client-side in
+  `SuggestionForm.tsx`, read server-side in `app/page.tsx`) — not a login,
+  just a convenience pre-fill.
 
 ## Known limitations / deliberate scope decisions
 
@@ -78,6 +114,17 @@ public-facing (pushing, deploying, deleting data).
 - Referees do **not** get a welcome email when created (explicitly declined
   by the user) — the admin sees the temp password once in the Referees UI
   and shares it manually.
+- `/programme` and `/approved` are fully open public links (no login, no
+  secret token) by the user's explicit choice. `/programme` shows every
+  scheduled session regardless of speaker-confirmation status; `/approved`
+  shows every approved session/speaker regardless of whether it's been
+  scheduled. If this needs tightening later (secret token in the URL, hiding
+  unconfirmed sessions), that's a deliberate reversal, not a bug fix.
+- Deleting a submission (admin-only, `/admin/submissions` → open an entry →
+  "Delete this submission") requires typing the shared `DELETE_PASSCODE`
+  env secret. There's no per-admin passcode — everyone with the passcode can
+  delete anything. Deletion cascades to that submission's sessions,
+  speakers, and any schedule placement (DB `on delete cascade`).
 - The Supabase secret key and Resend API key were shown in plain text during
   this project's build conversation; the user declined to rotate them (see
   Claude memory `project_key_exposure` for details) — don't re-raise unless

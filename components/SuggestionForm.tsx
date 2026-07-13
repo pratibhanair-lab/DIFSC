@@ -3,11 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
-import { submitSuggestion, type SubmitSpeakerInput } from "@/lib/actions/submissions";
+import { submitSuggestion, type SubmitSessionInput, type SubmitSpeakerInput } from "@/lib/actions/submissions";
+import type { SpeakerLocation } from "@/lib/types";
 
 type Lookup = { id: string; name: string };
 
 type Kind = "session" | "speaker" | "both";
+
+export type InitialSubmitter = {
+  name: string;
+  email: string;
+  phone: string;
+  orgSectionId: string;
+};
+
+const SUBMITTER_COOKIE = "difsc_submitter";
+const LOCATION_OPTIONS: SpeakerLocation[] = ["International", "GCC", "UAE", "DM"];
 
 const KIND_OPTIONS: { key: Kind; label: string; desc: string }[] = [
   { key: "session", label: "Session topic", desc: "Propose a talk or session" },
@@ -16,46 +27,159 @@ const KIND_OPTIONS: { key: Kind; label: string; desc: string }[] = [
 ];
 
 function blankSpeaker(): SubmitSpeakerInput {
-  return { name: "", contact: "", bio: "", topic: "" };
+  return { name: "", contact: "", bio: "", topic: "", location: "", affiliation: "" };
+}
+
+function blankSession(withSpeaker: boolean): SubmitSessionInput {
+  return {
+    title: "",
+    description: "",
+    categoryId: "",
+    sessionTypeId: "",
+    durationHours: 1,
+    partnerOrg: "",
+    speakers: withSpeaker ? [blankSpeaker()] : [],
+  };
+}
+
+function labelStyle(): React.CSSProperties {
+  return { display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 };
+}
+
+/** Shared fields for one speaker, used both standalone and nested under a session. */
+function SpeakerFields({
+  sp,
+  onChange,
+  onRemove,
+  canRemove,
+  label,
+}: {
+  sp: SubmitSpeakerInput;
+  onChange: (patch: Partial<SubmitSpeakerInput>) => void;
+  onRemove: () => void;
+  canRemove: boolean;
+  label: string;
+}) {
+  return (
+    <div style={{ border: "1px solid var(--line)", borderRadius: 13, padding: 18, marginBottom: 14, background: "var(--surface-2)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <span className="mono" style={{ fontSize: 11, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--accent)", fontWeight: 500 }}>
+          {label}
+        </span>
+        {canRemove && (
+          <button onClick={onRemove} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12.5, padding: "2px 8px", borderRadius: 6 }}>
+            Remove
+          </button>
+        )}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+        <label style={{ display: "block" }}>
+          <span style={labelStyle()}>
+            Speaker name <span style={{ color: "var(--rej)" }}>*</span>
+          </span>
+          <input className="input" style={{ background: "var(--surface)" }} value={sp.name} onChange={(e) => onChange({ name: e.target.value })} placeholder="Dr. Sarah Kwan" />
+        </label>
+        <label style={{ display: "block" }}>
+          <span style={labelStyle()}>Speaker contact</span>
+          <input className="input" style={{ background: "var(--surface)" }} value={sp.contact} onChange={(e) => onChange({ contact: e.target.value })} placeholder="Email or phone" />
+        </label>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+        <label style={{ display: "block" }}>
+          <span style={labelStyle()}>Speaker location</span>
+          <select className="input" style={{ background: "var(--surface)" }} value={sp.location} onChange={(e) => onChange({ location: e.target.value as SpeakerLocation | "" })}>
+            <option value="">Select...</option>
+            {LOCATION_OPTIONS.map((loc) => (
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label style={{ display: "block" }}>
+          <span style={labelStyle()}>Affiliation</span>
+          <input className="input" style={{ background: "var(--surface)" }} value={sp.affiliation} onChange={(e) => onChange({ affiliation: e.target.value })} placeholder="Organization / employer" />
+        </label>
+      </div>
+      <label style={{ display: "block", marginBottom: 14 }}>
+        <span style={labelStyle()}>Bio / credentials</span>
+        <textarea
+          className="input"
+          style={{ background: "var(--surface)", resize: "vertical", lineHeight: 1.5 }}
+          rows={2}
+          value={sp.bio}
+          onChange={(e) => onChange({ bio: e.target.value })}
+          placeholder="Relevant experience, affiliation, notable work..."
+        />
+      </label>
+      <label style={{ display: "block" }}>
+        <span style={labelStyle()}>
+          Topic they&apos;d speak on <span style={{ color: "var(--rej)" }}>*</span>
+        </span>
+        <input className="input" style={{ background: "var(--surface)" }} value={sp.topic} onChange={(e) => onChange({ topic: e.target.value })} placeholder="Free text - what they'd present" />
+      </label>
+    </div>
+  );
 }
 
 export default function SuggestionForm({
   categories,
   sessionTypes,
   orgSections,
+  initialSubmitter,
 }: {
   categories: Lookup[];
   sessionTypes: Lookup[];
   orgSections: Lookup[];
+  initialSubmitter?: InitialSubmitter | null;
 }) {
   const [phase, setPhase] = useState<"form" | "confirm">("form");
   const [confirmName, setConfirmName] = useState("");
   const [confirmRef, setConfirmRef] = useState("");
 
   const [kind, setKind] = useState<Kind>("session");
-  const [subName, setSubName] = useState("");
-  const [subEmail, setSubEmail] = useState("");
-  const [subPhone, setSubPhone] = useState("");
-  const [orgSectionId, setOrgSectionId] = useState("");
+  const [subName, setSubName] = useState(initialSubmitter?.name ?? "");
+  const [subEmail, setSubEmail] = useState(initialSubmitter?.email ?? "");
+  const [subPhone, setSubPhone] = useState(initialSubmitter?.phone ?? "");
+  const [orgSectionId, setOrgSectionId] = useState(initialSubmitter?.orgSectionId ?? "");
 
-  const [sesTitle, setSesTitle] = useState("");
-  const [sesDesc, setSesDesc] = useState("");
-  const [sesCat, setSesCat] = useState("");
-  const [sesType, setSesType] = useState("");
-  const [sesDur, setSesDur] = useState("1");
-  const [sesPartnerOrg, setSesPartnerOrg] = useState("");
-
+  const [sessions, setSessions] = useState<SubmitSessionInput[]>([blankSession(false)]);
   const [speakers, setSpeakers] = useState<SubmitSpeakerInput[]>([blankSpeaker()]);
-  const [linkToSession, setLinkToSession] = useState(true);
 
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const showSession = kind === "session" || kind === "both";
-  const showSpeaker = kind === "speaker" || kind === "both";
+  const showSpeaker = kind === "speaker";
+  const showNestedSpeakers = kind === "both";
 
+  function updateSession(idx: number, patch: Partial<SubmitSessionInput>) {
+    setSessions((prev) => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
+  }
+  function addSession() {
+    setSessions((prev) => [...prev, blankSession(showNestedSpeakers)]);
+  }
+  function removeSession(idx: number) {
+    setSessions((prev) => prev.filter((_, i) => i !== idx));
+  }
+  function updateSessionSpeaker(sessionIdx: number, speakerIdx: number, patch: Partial<SubmitSpeakerInput>) {
+    setSessions((prev) =>
+      prev.map((s, i) => (i === sessionIdx ? { ...s, speakers: s.speakers.map((sp, j) => (j === speakerIdx ? { ...sp, ...patch } : sp)) } : s))
+    );
+  }
+  function addSessionSpeaker(sessionIdx: number) {
+    setSessions((prev) => prev.map((s, i) => (i === sessionIdx ? { ...s, speakers: [...s.speakers, blankSpeaker()] } : s)));
+  }
+  function removeSessionSpeaker(sessionIdx: number, speakerIdx: number) {
+    setSessions((prev) => prev.map((s, i) => (i === sessionIdx ? { ...s, speakers: s.speakers.filter((_, j) => j !== speakerIdx) } : s)));
+  }
   function updateSpeaker(idx: number, patch: Partial<SubmitSpeakerInput>) {
     setSpeakers((prev) => prev.map((sp, i) => (i === idx ? { ...sp, ...patch } : sp)));
+  }
+
+  function rememberSubmitter() {
+    const value = JSON.stringify({ name: subName.trim(), email: subEmail.trim(), phone: subPhone.trim(), orgSectionId });
+    document.cookie = `${SUBMITTER_COOKIE}=${encodeURIComponent(value)}; max-age=15552000; path=/`;
   }
 
   async function handleSubmit() {
@@ -67,17 +191,7 @@ export default function SuggestionForm({
       subEmail,
       subPhone,
       orgSectionId,
-      linkSpeakersToSession: linkToSession,
-      session: showSession
-        ? {
-            title: sesTitle,
-            description: sesDesc,
-            categoryId: sesCat,
-            sessionTypeId: sesType,
-            durationHours: parseInt(sesDur, 10) || 1,
-            partnerOrg: sesPartnerOrg,
-          }
-        : undefined,
+      sessions: showSession ? sessions.map((s) => ({ ...s, speakers: showNestedSpeakers ? s.speakers : [] })) : undefined,
       speakers: showSpeaker ? speakers : undefined,
     });
     setSubmitting(false);
@@ -86,6 +200,7 @@ export default function SuggestionForm({
       setError(result.error);
       return;
     }
+    rememberSubmitter();
     setConfirmName(result.firstName);
     setConfirmRef(result.reference);
     setPhase("confirm");
@@ -93,18 +208,8 @@ export default function SuggestionForm({
 
   function resetForm() {
     setKind("session");
-    setSubName("");
-    setSubEmail("");
-    setSubPhone("");
-    setOrgSectionId("");
-    setSesTitle("");
-    setSesDesc("");
-    setSesCat("");
-    setSesType("");
-    setSesDur("1");
-    setSesPartnerOrg("");
+    setSessions([blankSession(false)]);
     setSpeakers([blankSpeaker()]);
-    setLinkToSession(true);
     setError("");
     setPhase("form");
   }
@@ -262,23 +367,23 @@ export default function SuggestionForm({
           <p style={{ color: "var(--muted)", fontSize: 13, margin: "0 0 20px" }}>So we can follow up on your suggestion.</p>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <label style={{ display: "block" }}>
-              <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>
+              <span style={labelStyle()}>
                 Full name <span style={{ color: "var(--rej)" }}>*</span>
               </span>
               <input className="input" value={subName} onChange={(e) => setSubName(e.target.value)} placeholder="Jane Doe" />
             </label>
             <label style={{ display: "block" }}>
-              <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>
+              <span style={labelStyle()}>
                 Email <span style={{ color: "var(--rej)" }}>*</span>
               </span>
               <input className="input" value={subEmail} onChange={(e) => setSubEmail(e.target.value)} placeholder="jane@org.gov" />
             </label>
             <label style={{ display: "block" }}>
-              <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>Phone</span>
+              <span style={labelStyle()}>Phone</span>
               <input className="input" value={subPhone} onChange={(e) => setSubPhone(e.target.value)} placeholder="+971 ..." />
             </label>
             <label style={{ display: "block" }}>
-              <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>Organization section</span>
+              <span style={labelStyle()}>Organization section</span>
               <select className="input" value={orgSectionId} onChange={(e) => setOrgSectionId(e.target.value)}>
                 <option value="">Select a section...</option>
                 {orgSections.map((o) => (
@@ -291,98 +396,149 @@ export default function SuggestionForm({
           </div>
         </div>
 
-        {showSession && (
-          <div className="card" style={{ padding: 26, marginBottom: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
-              <div
-                className="heading"
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 7,
-                  background: "var(--accent-weak)",
-                  color: "var(--accent-ink)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 13,
-                  fontWeight: 800,
-                }}
-              >
-                S
+        {showSession &&
+          sessions.map((s, sIdx) => (
+            <div key={sIdx} className="card" style={{ padding: 26, marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div
+                    className="heading"
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 7,
+                      background: "var(--accent-weak)",
+                      color: "var(--accent-ink)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 13,
+                      fontWeight: 800,
+                    }}
+                  >
+                    S
+                  </div>
+                  <h3 className="heading" style={{ fontWeight: 700, fontSize: 16, margin: 0 }}>
+                    Session topic {sessions.length > 1 ? sIdx + 1 : ""}
+                  </h3>
+                </div>
+                {sessions.length > 1 && (
+                  <button onClick={() => removeSession(sIdx)} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12.5, padding: "2px 8px", borderRadius: 6 }}>
+                    Remove
+                  </button>
+                )}
               </div>
-              <h3 className="heading" style={{ fontWeight: 700, fontSize: 16, margin: 0 }}>
-                Session topic
-              </h3>
-            </div>
-            <label style={{ display: "block", marginBottom: 16 }}>
-              <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>
-                Topic title <span style={{ color: "var(--rej)" }}>*</span>
-              </span>
-              <input
-                className="input"
-                value={sesTitle}
-                onChange={(e) => setSesTitle(e.target.value)}
-                placeholder="e.g. Rapid pathogen detection in poultry supply chains"
-              />
-            </label>
-            <label style={{ display: "block", marginBottom: 16 }}>
-              <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>Short description</span>
-              <textarea
-                className="input"
-                rows={3}
-                value={sesDesc}
-                onChange={(e) => setSesDesc(e.target.value)}
-                placeholder="What will this session cover, and why does it matter?"
-                style={{ resize: "vertical", lineHeight: 1.5 }}
-              />
-            </label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-              <label style={{ display: "block" }}>
-                <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>
-                  Category <span style={{ color: "var(--rej)" }}>*</span>
+              <label style={{ display: "block", marginBottom: 16 }}>
+                <span style={labelStyle()}>
+                  Topic title <span style={{ color: "var(--rej)" }}>*</span>
                 </span>
-                <select className="input" value={sesCat} onChange={(e) => setSesCat(e.target.value)}>
-                  <option value="">Select a category...</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
+                <input
+                  className="input"
+                  value={s.title}
+                  onChange={(e) => updateSession(sIdx, { title: e.target.value })}
+                  placeholder="e.g. Rapid pathogen detection in poultry supply chains"
+                />
+              </label>
+              <label style={{ display: "block", marginBottom: 16 }}>
+                <span style={labelStyle()}>Short description</span>
+                <textarea
+                  className="input"
+                  rows={3}
+                  value={s.description}
+                  onChange={(e) => updateSession(sIdx, { description: e.target.value })}
+                  placeholder="What will this session cover, and why does it matter?"
+                  style={{ resize: "vertical", lineHeight: 1.5 }}
+                />
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+                <label style={{ display: "block" }}>
+                  <span style={labelStyle()}>
+                    Category <span style={{ color: "var(--rej)" }}>*</span>
+                  </span>
+                  <select className="input" value={s.categoryId} onChange={(e) => updateSession(sIdx, { categoryId: e.target.value })}>
+                    <option value="">Select a category...</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ display: "block" }}>
+                  <span style={labelStyle()}>
+                    Session type <span style={{ color: "var(--rej)" }}>*</span>
+                  </span>
+                  <select className="input" value={s.sessionTypeId} onChange={(e) => updateSession(sIdx, { sessionTypeId: e.target.value })}>
+                    <option value="">Select a type...</option>
+                    {sessionTypes.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ display: "block" }}>
+                  <span style={labelStyle()}>Recommended duration</span>
+                  <select className="input" value={s.durationHours} onChange={(e) => updateSession(sIdx, { durationHours: parseInt(e.target.value, 10) || 1 })}>
+                    <option value="1">1 hour</option>
+                    <option value="2">2 hours</option>
+                    <option value="3">3 hours</option>
+                  </select>
+                </label>
+              </div>
+              <label style={{ display: "block", marginTop: 16 }}>
+                <span style={labelStyle()}>Partner organization</span>
+                <input
+                  className="input"
+                  value={s.partnerOrg}
+                  onChange={(e) => updateSession(sIdx, { partnerOrg: e.target.value })}
+                  placeholder="Optional - co-organizing or supporting organization"
+                />
+              </label>
+
+              {showNestedSpeakers && (
+                <div style={{ marginTop: 22, paddingTop: 20, borderTop: "1px dashed var(--line)" }}>
+                  <div className="mono" style={{ fontSize: 11, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 12 }}>
+                    Speakers for this session
+                  </div>
+                  {s.speakers.map((sp, spIdx) => (
+                    <SpeakerFields
+                      key={spIdx}
+                      sp={sp}
+                      label={`Speaker ${spIdx + 1}`}
+                      canRemove={s.speakers.length > 1}
+                      onChange={(patch) => updateSessionSpeaker(sIdx, spIdx, patch)}
+                      onRemove={() => removeSessionSpeaker(sIdx, spIdx)}
+                    />
                   ))}
-                </select>
-              </label>
-              <label style={{ display: "block" }}>
-                <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>
-                  Session type <span style={{ color: "var(--rej)" }}>*</span>
-                </span>
-                <select className="input" value={sesType} onChange={(e) => setSesType(e.target.value)}>
-                  <option value="">Select a type...</option>
-                  {sessionTypes.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ display: "block" }}>
-                <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>Recommended duration</span>
-                <select className="input" value={sesDur} onChange={(e) => setSesDur(e.target.value)}>
-                  <option value="1">1 hour</option>
-                  <option value="2">2 hours</option>
-                  <option value="3">3 hours</option>
-                </select>
-              </label>
+                  <button
+                    onClick={() => addSessionSpeaker(sIdx)}
+                    style={{ width: "100%", background: "none", border: "1.5px dashed var(--line)", borderRadius: 11, padding: 12, fontWeight: 600, fontSize: 14, color: "var(--accent)" }}
+                  >
+                    + Add speaker for this session
+                  </button>
+                </div>
+              )}
             </div>
-            <label style={{ display: "block", marginTop: 16 }}>
-              <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>Partner organization</span>
-              <input
-                className="input"
-                value={sesPartnerOrg}
-                onChange={(e) => setSesPartnerOrg(e.target.value)}
-                placeholder="Optional - co-organizing or supporting organization"
-              />
-            </label>
-          </div>
+          ))}
+
+        {showSession && (
+          <button
+            onClick={addSession}
+            style={{
+              width: "100%",
+              background: "none",
+              border: "1.5px dashed var(--accent)",
+              borderRadius: 11,
+              padding: 14,
+              fontWeight: 700,
+              fontSize: 14.5,
+              color: "var(--accent)",
+              marginBottom: 20,
+            }}
+          >
+            + Add another session
+          </button>
         )}
 
         {showSpeaker && (
@@ -414,68 +570,14 @@ export default function SuggestionForm({
             </p>
 
             {speakers.map((sp, idx) => (
-              <div key={idx} style={{ border: "1px solid var(--line)", borderRadius: 13, padding: 18, marginBottom: 14, background: "var(--surface-2)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <span className="mono" style={{ fontSize: 11, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--accent)", fontWeight: 500 }}>
-                    Speaker {idx + 1}
-                  </span>
-                  {speakers.length > 1 && (
-                    <button
-                      onClick={() => setSpeakers((prev) => prev.filter((_, i) => i !== idx))}
-                      style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 12.5, padding: "2px 8px", borderRadius: 6 }}
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
-                  <label style={{ display: "block" }}>
-                    <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>
-                      Speaker name <span style={{ color: "var(--rej)" }}>*</span>
-                    </span>
-                    <input
-                      className="input"
-                      style={{ background: "var(--surface)" }}
-                      value={sp.name}
-                      onChange={(e) => updateSpeaker(idx, { name: e.target.value })}
-                      placeholder="Dr. Sarah Kwan"
-                    />
-                  </label>
-                  <label style={{ display: "block" }}>
-                    <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>Speaker contact</span>
-                    <input
-                      className="input"
-                      style={{ background: "var(--surface)" }}
-                      value={sp.contact}
-                      onChange={(e) => updateSpeaker(idx, { contact: e.target.value })}
-                      placeholder="Email or phone"
-                    />
-                  </label>
-                </div>
-                <label style={{ display: "block", marginBottom: 14 }}>
-                  <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>Bio / credentials</span>
-                  <textarea
-                    className="input"
-                    style={{ background: "var(--surface)", resize: "vertical", lineHeight: 1.5 }}
-                    rows={2}
-                    value={sp.bio}
-                    onChange={(e) => updateSpeaker(idx, { bio: e.target.value })}
-                    placeholder="Relevant experience, affiliation, notable work..."
-                  />
-                </label>
-                <label style={{ display: "block" }}>
-                  <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>
-                    Topic they&apos;d speak on <span style={{ color: "var(--rej)" }}>*</span>
-                  </span>
-                  <input
-                    className="input"
-                    style={{ background: "var(--surface)" }}
-                    value={sp.topic}
-                    onChange={(e) => updateSpeaker(idx, { topic: e.target.value })}
-                    placeholder="Free text - what they'd present"
-                  />
-                </label>
-              </div>
+              <SpeakerFields
+                key={idx}
+                sp={sp}
+                label={`Speaker ${idx + 1}`}
+                canRemove={speakers.length > 1}
+                onChange={(patch) => updateSpeaker(idx, patch)}
+                onRemove={() => setSpeakers((prev) => prev.filter((_, i) => i !== idx))}
+              />
             ))}
 
             <button
@@ -493,34 +595,6 @@ export default function SuggestionForm({
             >
               + Add another speaker
             </button>
-
-            {kind === "both" && (
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 10,
-                  marginTop: 18,
-                  padding: 14,
-                  background: "var(--accent-weak)",
-                  borderRadius: 11,
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={linkToSession}
-                  onChange={(e) => setLinkToSession(e.target.checked)}
-                  style={{ marginTop: 2, width: 16, height: 16, accentColor: "var(--accent)" }}
-                />
-                <span style={{ fontSize: 13.5, lineHeight: 1.5, color: "var(--accent-ink)" }}>
-                  Link these speaker(s) to the session topic above{" "}
-                  <span style={{ opacity: 0.75 }}>
-                    &mdash; <span style={{ fontWeight: 600 }}>&ldquo;{sesTitle || "your session topic"}&rdquo;</span>
-                  </span>
-                </span>
-              </label>
-            )}
           </div>
         )}
 

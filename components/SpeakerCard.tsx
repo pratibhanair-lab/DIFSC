@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import StatusChip from "@/components/StatusChip";
 import { decideSpeaker } from "@/lib/actions/review";
-import type { SpeakerStatus } from "@/lib/types";
+import type { SpeakerLocation, SpeakerStatus } from "@/lib/types";
 
 type Speaker = {
   id: string;
@@ -12,6 +12,8 @@ type Speaker = {
   bio: string | null;
   contact: string | null;
   topic: string;
+  location?: SpeakerLocation | null;
+  affiliation?: string | null;
   status: SpeakerStatus;
 };
 
@@ -36,6 +38,11 @@ export default function SpeakerCard({ speaker, showContact }: { speaker: Speaker
         </div>
         <StatusChip status={speaker.status} />
       </div>
+      {(speaker.location || speaker.affiliation) && (
+        <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 4 }}>
+          {[speaker.location, speaker.affiliation].filter(Boolean).join(" · ")}
+        </div>
+      )}
       {speaker.bio && <p style={{ fontSize: 13, lineHeight: 1.55, margin: "0 0 6px", color: "var(--muted)" }}>{speaker.bio}</p>}
       {showContact && speaker.contact && (
         <div style={{ fontSize: 12.5, color: "var(--muted)" }}>

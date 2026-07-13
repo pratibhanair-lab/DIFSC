@@ -24,6 +24,7 @@ export type ScheduledCard = {
   title: string;
   category: string;
   speakerPreview: string;
+  orgSectionName: string | null;
   speakers: { speakerId: string; name: string; topic: string }[];
 };
 
@@ -59,16 +60,22 @@ export async function fetchScheduleBoard(days: string[]): Promise<ScheduleBoard>
     { data: speakers },
     { data: scheduleRows },
     { data: sessionSpeakers },
+    { data: submissions },
+    { data: orgSections },
   ] = await Promise.all([
     admin.from("halls").select("id,name").order("name"),
     admin.from("categories").select("id,name").order("name"),
-    admin.from("sessions").select("id, title, category_id, recommended_duration_hours, status"),
+    admin.from("sessions").select("id, submission_id, title, category_id, recommended_duration_hours, status"),
     admin.from("speakers").select("id, session_id, name, topic, status"),
     admin.from("schedule").select("*").in("day", days),
     admin.from("session_speakers").select("*").order("position", { ascending: true }),
+    admin.from("submissions").select("id, org_section_id"),
+    admin.from("org_sections").select("id, name"),
   ]);
 
   const catMap = new Map((categories ?? []).map((c) => [c.id, c.name]));
+  const orgSectionNameById = new Map((orgSections ?? []).map((o) => [o.id, o.name]));
+  const orgSectionNameBySubmission = new Map((submissions ?? []).map((s) => [s.id, s.org_section_id ? orgSectionNameById.get(s.org_section_id) ?? null : null]));
   const speakersBySession = new Map<string, NonNullable<typeof speakers>>();
   (speakers ?? []).forEach((sp) => {
     if (!sp.session_id) return;
@@ -91,7 +98,7 @@ export async function fetchScheduleBoard(days: string[]): Promise<ScheduleBoard>
     }));
 
   const speakerPool: SpeakerPoolEntry[] = (speakers ?? [])
-    .filter((sp) => sp.status === "approved" || sp.status === "confirmed")
+    .filter((sp) => sp.status === "confirmed")
     .map((sp) => ({ id: sp.id, name: sp.name, topic: sp.topic }));
 
   const sessionById = new Map((sessions ?? []).map((s) => [s.id, s]));
@@ -122,6 +129,7 @@ export async function fetchScheduleBoard(days: string[]): Promise<ScheduleBoard>
       title: session.title,
       category: catMap.get(session.category_id) ?? "",
       speakerPreview: speakerPreviewFor(speakersBySession.get(session.id) ?? []),
+      orgSectionName: orgSectionNameBySubmission.get(session.submission_id) ?? null,
       speakers: assigned,
     };
     cardsByDay[row.day] = [...(cardsByDay[row.day] ?? []), card];

@@ -136,7 +136,7 @@ export default function ScheduleGrid({ board, categories }: { board: ScheduleBoa
             <h2 className="heading" style={{ fontWeight: 700, fontSize: 14, margin: "0 0 2px" }}>
               Speakers
             </h2>
-            <p style={{ fontSize: 11.5, color: "var(--muted)", margin: 0 }}>Approved &amp; confirmed. Drag onto a scheduled session &rarr;</p>
+            <p style={{ fontSize: 11.5, color: "var(--muted)", margin: 0 }}>Confirmed only. Drag onto a scheduled session &rarr;</p>
           </div>
           <div style={{ flex: 1, overflow: "auto", padding: "0 14px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
             {speakerPanel.map((sp) => (
@@ -294,6 +294,7 @@ export default function ScheduleGrid({ board, categories }: { board: ScheduleBoa
                       )}
                       {isExpanded && (
                         <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,.3)", display: "flex", flexDirection: "column", gap: 6 }}>
+                          <div style={{ fontSize: 10.5, opacity: 0.85 }}>Submitted by: {card.orgSectionName ?? "—"}</div>
                           {card.speakers.map((spv, i) => {
                             const segLen = card.durationHours / card.speakers.length;
                             const segStart = startH + segLen * i;

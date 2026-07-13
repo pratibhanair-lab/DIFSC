@@ -13,17 +13,24 @@ type Props = {
 };
 
 function titleOf(s: SubmissionView) {
-  if (s.session) return s.session.title;
+  if (s.sessions.length) {
+    const first = s.sessions[0].title;
+    return s.sessions.length === 1 ? first : `${first} +${s.sessions.length - 1} more`;
+  }
   if (s.speakers.length) return s.speakers[0].name;
   return "Speaker suggestion";
 }
 function sublineOf(s: SubmissionView) {
-  if (s.session && s.speakers.length) {
-    const names = s.speakers.length === 1 ? s.speakers[0].name : `${s.speakers[0].name} +${s.speakers.length - 1} more`;
-    return `Speakers: ${names}`;
+  if (s.sessions.length) {
+    const allSpeakers = s.sessions.flatMap((sess) => sess.speakers);
+    if (allSpeakers.length) {
+      const names = allSpeakers.length === 1 ? allSpeakers[0].name : `${allSpeakers[0].name} +${allSpeakers.length - 1} more`;
+      return `Speakers: ${names}`;
+    }
+    return s.sessions[0].description ? s.sessions[0].description.slice(0, 60) + "..." : "";
   }
-  if (!s.session && s.speakers.length) return s.speakers[0].topic || "Speaker suggestion";
-  return s.session?.description ? s.session.description.slice(0, 60) + "..." : "";
+  if (s.speakers.length) return s.speakers[0].topic || "Speaker suggestion";
+  return "";
 }
 
 export default function SubmissionsBrowser({ submissions, categories, sessionTypes }: Props) {
@@ -40,7 +47,7 @@ export default function SubmissionsBrowser({ submissions, categories, sessionTyp
     return submissions.filter((s) => {
       if (type === "session" && !(s.kind === "session" || s.kind === "both")) return false;
       if (type === "speaker" && !(s.kind === "speaker" || s.kind === "both")) return false;
-      if (category !== "all" && s.session?.categoryId !== category) return false;
+      if (category !== "all" && !s.sessions.some((sess) => sess.categoryId === category)) return false;
       if (status !== "all" && s.overallStatus !== status) return false;
       if (orgQ && !(s.orgSectionName ?? "").toLowerCase().includes(orgQ)) return false;
       if (q) {
@@ -132,7 +139,7 @@ export default function SubmissionsBrowser({ submissions, categories, sessionTyp
               <div style={{ fontWeight: 600, fontSize: 14, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{titleOf(r)}</div>
               <div style={{ fontSize: 12, color: "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sublineOf(r)}</div>
             </div>
-            <div style={{ fontSize: 13, color: "var(--muted)" }}>{r.session?.categoryName ?? "—"}</div>
+            <div style={{ fontSize: 13, color: "var(--muted)" }}>{r.sessions[0]?.categoryName ?? "—"}</div>
             <div style={{ fontSize: 13, color: "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.submitterName}</div>
             <div>
               <StatusChip status={r.overallStatus} />

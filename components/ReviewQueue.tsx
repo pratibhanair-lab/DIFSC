@@ -4,14 +4,18 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import TypeBadge from "@/components/TypeBadge";
 import SpeakerCard from "@/components/SpeakerCard";
-import { decideSession, decideSpeakerOnlySubmission, reviseSession } from "@/lib/actions/review";
+import SessionReviewCard from "@/components/SessionReviewCard";
+import { decideSpeakerOnlySubmission } from "@/lib/actions/review";
 import type { SubmissionView } from "@/lib/submissions-view";
 
 type Category = { id: string; name: string };
 type SessionType = { id: string; name: string };
 
 function titleOf(s: SubmissionView) {
-  if (s.session) return s.session.title;
+  if (s.sessions.length) {
+    const first = s.sessions[0].title;
+    return s.sessions.length === 1 ? first : `${first} +${s.sessions.length - 1} more`;
+  }
   if (s.speakers.length) return s.speakers[0].name;
   return "Speaker suggestion";
 }
@@ -31,20 +35,17 @@ export default function ReviewQueue({
   const [catFilter, setCatFilter] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(pending[0]?.id ?? null);
   const [comment, setComment] = useState("");
-  const [revising, setRevising] = useState(false);
-  const [revTitle, setRevTitle] = useState("");
-  const [revCat, setRevCat] = useState("");
-  const [revType, setRevType] = useState("");
   const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const orgQ = org.trim().toLowerCase();
     return pending.filter((s) => {
-      if (catFilter !== "all" && s.session?.categoryId !== catFilter) return false;
+      if (catFilter !== "all" && !s.sessions.some((sess) => sess.categoryId === catFilter)) return false;
       if (orgQ && !(s.orgSectionName ?? "").toLowerCase().includes(orgQ)) return false;
       if (q) {
-        const hit = titleOf(s).toLowerCase().includes(q) || s.speakers.some((sp) => sp.name.toLowerCase().includes(q));
+        const allSpeakers = [...s.speakers, ...s.sessions.flatMap((sess) => sess.speakers)];
+        const hit = titleOf(s).toLowerCase().includes(q) || allSpeakers.some((sp) => sp.name.toLowerCase().includes(q));
         if (!hit) return false;
       }
       return true;
@@ -56,34 +57,12 @@ export default function ReviewQueue({
   function selectItem(id: string) {
     setSelectedId(id);
     setComment("");
-    setRevising(false);
   }
 
-  function startRevise() {
-    if (!selected?.session) return;
-    setRevTitle(selected.session.title);
-    setRevCat(selected.session.categoryId);
-    setRevType(selected.session.sessionTypeId);
-    setRevising(true);
-  }
-
-  async function saveRevise() {
-    if (!selected?.session) return;
-    setBusy(true);
-    await reviseSession(selected.session.id, { title: revTitle, categoryId: revCat, sessionTypeId: revType });
-    setBusy(false);
-    setRevising(false);
-    router.refresh();
-  }
-
-  async function decide(status: "approved" | "rejected") {
+  async function decideSubmission(status: "approved" | "rejected") {
     if (!selected) return;
     setBusy(true);
-    if (selected.session) {
-      await decideSession(selected.session.id, status, comment);
-    } else {
-      await decideSpeakerOnlySubmission(selected.id, status, comment);
-    }
+    await decideSpeakerOnlySubmission(selected.id, status, comment);
     setBusy(false);
     setComment("");
     router.refresh();
@@ -161,43 +140,19 @@ export default function ReviewQueue({
               <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
                 {selected.reference}
               </span>
+              {selected.sessions.length > 1 && (
+                <span style={{ fontSize: 12, color: "var(--muted)" }}>&middot; {selected.sessions.length} sessions in this submission</span>
+              )}
             </div>
             <h1 className="heading" style={{ fontWeight: 800, fontSize: 26, lineHeight: 1.2, margin: "0 0 24px" }}>
               {titleOf(selected)}
             </h1>
 
-            {selected.session && (
-              <div className="card" style={{ padding: 22, marginBottom: 16 }}>
-                <div className="mono" style={{ fontSize: 11, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>
-                  Session topic
-                </div>
-                <p style={{ fontSize: 14.5, lineHeight: 1.65, margin: "0 0 16px" }}>{selected.session.description}</p>
-                <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
-                  <div>
-                    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 2 }}>Category</div>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{selected.session.categoryName}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 2 }}>Session type</div>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{selected.session.sessionTypeName}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 2 }}>Recommended time</div>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>
-                      {selected.session.recommendedDurationHours} {selected.session.recommendedDurationHours > 1 ? "hours" : "hour"}
-                    </div>
-                  </div>
-                </div>
-                {selected.session.partnerOrg && (
-                  <div style={{ marginTop: 14 }}>
-                    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 2 }}>Partner organization</div>
-                    <div style={{ fontSize: 14, fontWeight: 600 }}>{selected.session.partnerOrg}</div>
-                  </div>
-                )}
-              </div>
-            )}
+            {selected.sessions.map((session) => (
+              <SessionReviewCard key={session.id} session={session} categories={categories} sessionTypes={sessionTypes} />
+            ))}
 
-            {selected.speakers.length > 0 && (
+            {selected.sessions.length === 0 && selected.speakers.length > 0 && (
               <div className="card" style={{ padding: 22, marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                   <div className="mono" style={{ fontSize: 11, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--muted)" }}>
@@ -221,50 +176,10 @@ export default function ReviewQueue({
               </div>
             </div>
 
-            {revising && selected.session ? (
-              <div className="card" style={{ padding: 22, marginBottom: 24, borderColor: "var(--accent)", borderWidth: 1.5 }}>
-                <div className="mono" style={{ fontSize: 11, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 14 }}>
-                  Revise session details
-                </div>
-                <label style={{ display: "block", marginBottom: 14 }}>
-                  <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>Session title</span>
-                  <input className="input" style={{ background: "var(--surface)" }} value={revTitle} onChange={(e) => setRevTitle(e.target.value)} />
-                </label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 18 }}>
-                  <label style={{ display: "block" }}>
-                    <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>Category</span>
-                    <select className="input" style={{ background: "var(--surface)" }} value={revCat} onChange={(e) => setRevCat(e.target.value)}>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label style={{ display: "block" }}>
-                    <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 }}>Session type</span>
-                    <select className="input" style={{ background: "var(--surface)" }} value={revType} onChange={(e) => setRevType(e.target.value)}>
-                      {sessionTypes.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <div style={{ display: "flex", gap: 12 }}>
-                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveRevise} disabled={busy}>
-                    Save revisions
-                  </button>
-                  <button className="btn btn-muted" onClick={() => setRevising(false)}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
+            {selected.sessions.length === 0 && (
               <>
                 <div className="mono" style={{ fontSize: 11, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 8 }}>
-                  Decision on this {selected.session ? "session" : "submission"} (optional comment)
+                  Decision on this submission (optional comment)
                 </div>
                 <textarea
                   className="input"
@@ -275,16 +190,11 @@ export default function ReviewQueue({
                   style={{ resize: "vertical", lineHeight: 1.5, marginBottom: 20 }}
                 />
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                  <button className="btn btn-primary" style={{ flex: 1, background: "var(--appr)" }} onClick={() => decide("approved")} disabled={busy}>
-                    &#10003; Approve {selected.session ? "session" : ""}
+                  <button className="btn btn-primary" style={{ flex: 1, background: "var(--appr)" }} onClick={() => decideSubmission("approved")} disabled={busy}>
+                    &#10003; Approve
                   </button>
-                  {selected.session && (
-                    <button className="btn btn-outline" style={{ flex: 1 }} onClick={startRevise} disabled={busy}>
-                      &#9998; Revise
-                    </button>
-                  )}
-                  <button className="btn btn-danger-outline" style={{ flex: 1 }} onClick={() => decide("rejected")} disabled={busy}>
-                    &#10007; Reject {selected.session ? "session" : ""}
+                  <button className="btn btn-danger-outline" style={{ flex: 1 }} onClick={() => decideSubmission("rejected")} disabled={busy}>
+                    &#10007; Reject
                   </button>
                 </div>
               </>

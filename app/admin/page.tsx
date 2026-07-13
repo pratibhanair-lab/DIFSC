@@ -33,7 +33,7 @@ export default async function AdminOverviewPage() {
 
   const categoryStats = (categories ?? []).map((c, i) => ({
     name: c.name,
-    count: submissions.filter((s) => s.session?.categoryId === c.id).length,
+    count: submissions.filter((s) => s.sessions.some((sess) => sess.categoryId === c.id)).length,
     color: CAT_COLORS[i % CAT_COLORS.length],
   }));
   const sectionStats = (orgSections ?? []).map((o, i) => ({
