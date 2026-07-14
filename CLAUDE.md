@@ -64,16 +64,26 @@ public-facing (pushing, deploying, deleting data).
   `/approved`: read-only cards, no Server Action calls, no decision buttons.
   Any new public-facing view should follow this pattern rather than reusing
   an admin component that has action buttons wired in.
+- `components/PublicSubmissionsBrowser.tsx` /
+  `components/PublicSubmissionDetailModal.tsx` — read-only counterparts of
+  `SubmissionsBrowser.tsx` / `SubmissionDetailModal.tsx` for `/submissions`.
+  Show every submission across all statuses (pending/approved/rejected) and
+  the submitter's **name**, but never their email/phone, and no
+  approve/reject/revise/delete controls.
 - `components/ShareScheduleButton.tsx` — client component on the admin
   `/schedule` page that copies the `/programme` URL to the clipboard.
-- Routes: `/` (public form), `/login`, `/admin` (+ `/admin/submissions`,
-  `/admin/setup` = categories/session types/org sections/halls,
-  `/admin/referees`), `/review` (admin + referee shared queue), `/schedule`
-  (admin only, own header, not under `/admin`'s layout), `/programme`
-  (public, no login, read-only conference programme — shareable link,
-  reuses `fetchScheduleBoard`), `/approved` (public, no login — every
-  approved session + speaker regardless of whether it's been scheduled yet,
-  reuses `fetchApprovedListing`).
+- Routes: `/` (public form — also has nav buttons to the four public pages
+  below), `/login`, `/admin` (+ `/admin/submissions`, `/admin/setup` =
+  categories/session types/org sections/halls, `/admin/referees`),
+  `/review` (admin + referee shared queue), `/schedule` (admin only, own
+  header, not under `/admin`'s layout), `/programme` (public, no login,
+  read-only conference programme — shareable link, reuses
+  `fetchScheduleBoard`), `/approved` (public, no login — every approved
+  session + speaker regardless of whether it's been scheduled yet, reuses
+  `fetchApprovedListing`), `/overview` (public, no login — read-only copy of
+  the admin overview dashboard, reuses `fetchAllSubmissions`), `/submissions`
+  (public, no login — read-only copy of `/admin/submissions`, reuses
+  `fetchAllSubmissions`).
 
 ## Conventions
 
@@ -114,12 +124,17 @@ public-facing (pushing, deploying, deleting data).
 - Referees do **not** get a welcome email when created (explicitly declined
   by the user) — the admin sees the temp password once in the Referees UI
   and shares it manually.
-- `/programme` and `/approved` are fully open public links (no login, no
-  secret token) by the user's explicit choice. `/programme` shows every
-  scheduled session regardless of speaker-confirmation status; `/approved`
-  shows every approved session/speaker regardless of whether it's been
-  scheduled. If this needs tightening later (secret token in the URL, hiding
-  unconfirmed sessions), that's a deliberate reversal, not a bug fix.
+- `/programme`, `/approved`, `/overview`, and `/submissions` are all fully
+  open public links (no login, no secret token) by the user's explicit
+  choice. `/programme` shows every scheduled session regardless of
+  speaker-confirmation status; `/approved` shows every approved
+  session/speaker regardless of whether it's been scheduled. `/overview` and
+  `/submissions` go further and expose **pending and rejected** submissions
+  too (the user chose this over an approved-only view, so submitters can
+  track their own submission's status) — submitter **name** is shown but
+  email/phone never are. If this needs tightening later (secret token in the
+  URL, hiding unconfirmed/pending/rejected items), that's a deliberate
+  reversal, not a bug fix.
 - Deleting a submission (admin-only, `/admin/submissions` → open an entry →
   "Delete this submission") requires typing the shared `DELETE_PASSCODE`
   env secret. There's no per-admin passcode — everyone with the passcode can

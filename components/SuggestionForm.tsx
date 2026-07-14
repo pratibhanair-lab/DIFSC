@@ -317,10 +317,25 @@ export default function SuggestionForm({
         <h1 className="heading" style={{ fontWeight: 800, fontSize: 34, lineHeight: 1.12, margin: "10px 0 8px", letterSpacing: "-.01em" }}>
           Suggest a session or speaker
         </h1>
-        <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.6, margin: "0 0 32px", maxWidth: 560 }}>
+        <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.6, margin: "0 0 24px", maxWidth: 560 }}>
           Help shape the programme. Submit a session topic, recommend a speaker, or both. Our review committee
           evaluates every suggestion before scheduling.
         </p>
+
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "0 0 32px" }}>
+          <Link href="/overview" className="btn btn-outline" style={{ fontSize: 13 }}>
+            Overview dashboard
+          </Link>
+          <Link href="/submissions" className="btn btn-outline" style={{ fontSize: 13 }}>
+            All submissions
+          </Link>
+          <Link href="/programme" className="btn btn-outline" style={{ fontSize: 13 }}>
+            Conference programme
+          </Link>
+          <Link href="/approved" className="btn btn-outline" style={{ fontSize: 13 }}>
+            Approved sessions &amp; speakers
+          </Link>
+        </div>
 
         <div className="mono" style={{ fontSize: 12, fontWeight: 500, letterSpacing: ".03em", color: "var(--muted)", textTransform: "uppercase", marginBottom: 12 }}>
           What are you suggesting?
