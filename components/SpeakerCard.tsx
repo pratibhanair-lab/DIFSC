@@ -14,6 +14,7 @@ type Speaker = {
   topic: string;
   location?: SpeakerLocation | null;
   affiliation?: string | null;
+  commercialInvolvement?: boolean;
   status: SpeakerStatus;
 };
 
@@ -52,6 +53,11 @@ export default function SpeakerCard({ speaker, showContact }: { speaker: Speaker
       <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 2 }}>
         Would speak on: <span style={{ color: "var(--ink)" }}>{speaker.topic}</span>
       </div>
+      {speaker.commercialInvolvement && (
+        <div style={{ fontSize: 12.5, color: "var(--accent)", marginTop: 4, fontWeight: 600 }}>
+          &#9888; Involves commercial products or services
+        </div>
+      )}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
         {speaker.status === "pending" && (
           <button disabled={busy} onClick={() => set("approved")} style={{ ...smallBtn, background: "var(--appr)", color: "#fff" }}>

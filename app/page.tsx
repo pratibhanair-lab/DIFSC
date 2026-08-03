@@ -37,6 +37,9 @@ export default async function HomePage() {
       sessionTypes={sessionTypes ?? []}
       orgSections={orgSections ?? []}
       initialSubmitter={initialSubmitter}
+      source="external"
+      showDeadlineNotice
+      showOrgSection={false}
     />
   );
 }

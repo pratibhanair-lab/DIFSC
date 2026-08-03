@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import TypeBadge from "@/components/TypeBadge";
+import SourceBadge from "@/components/SourceBadge";
 import SpeakerCard from "@/components/SpeakerCard";
 import SessionReviewCard from "@/components/SessionReviewCard";
 import { decideSpeakerOnlySubmission } from "@/lib/actions/review";
@@ -33,6 +34,7 @@ export default function ReviewQueue({
   const [search, setSearch] = useState("");
   const [org, setOrg] = useState("");
   const [catFilter, setCatFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(pending[0]?.id ?? null);
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,6 +44,7 @@ export default function ReviewQueue({
     const orgQ = org.trim().toLowerCase();
     return pending.filter((s) => {
       if (catFilter !== "all" && !s.sessions.some((sess) => sess.categoryId === catFilter)) return false;
+      if (sourceFilter !== "all" && s.source !== sourceFilter) return false;
       if (orgQ && !(s.orgSectionName ?? "").toLowerCase().includes(orgQ)) return false;
       if (q) {
         const allSpeakers = [...s.speakers, ...s.sessions.flatMap((sess) => sess.speakers)];
@@ -50,7 +53,7 @@ export default function ReviewQueue({
       }
       return true;
     });
-  }, [pending, search, org, catFilter]);
+  }, [pending, search, org, catFilter, sourceFilter]);
 
   const selected = filtered.find((s) => s.id === selectedId) ?? filtered[0] ?? null;
 
@@ -95,6 +98,11 @@ export default function ReviewQueue({
             </select>
             <input className="input" style={{ flex: 1, background: "var(--surface-2)", fontSize: 12.5 }} value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Organization..." />
           </div>
+          <select className="input" style={{ background: "var(--surface-2)", fontSize: 12.5 }} value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)}>
+            <option value="all">External + Internal</option>
+            <option value="external">External only</option>
+            <option value="internal">Internal (DM staff) only</option>
+          </select>
         </div>
         <div style={{ flex: 1, overflow: "auto" }}>
           {filtered.map((q) => {
@@ -114,8 +122,9 @@ export default function ReviewQueue({
                   background: active ? "var(--accent-weak)" : "transparent",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                   <TypeBadge kind={q.kind} />
+                  <SourceBadge source={q.source} />
                   <span className="mono" style={{ fontSize: 11, color: "var(--muted)" }}>
                     {q.reference}
                   </span>
@@ -137,6 +146,7 @@ export default function ReviewQueue({
           <div style={{ maxWidth: 680, margin: "0 auto", padding: "36px 32px 60px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
               <TypeBadge kind={selected.kind} />
+              <SourceBadge source={selected.source} />
               <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
                 {selected.reference}
               </span>

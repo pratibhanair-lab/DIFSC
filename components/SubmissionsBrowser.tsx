@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import StatusChip from "@/components/StatusChip";
 import TypeBadge from "@/components/TypeBadge";
+import SourceBadge from "@/components/SourceBadge";
 import SubmissionDetailModal from "@/components/SubmissionDetailModal";
 import type { SubmissionView } from "@/lib/submissions-view";
 
@@ -39,6 +40,7 @@ export default function SubmissionsBrowser({ submissions, categories, sessionTyp
   const [type, setType] = useState("all");
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
+  const [source, setSource] = useState("all");
   const [modalId, setModalId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -49,6 +51,7 @@ export default function SubmissionsBrowser({ submissions, categories, sessionTyp
       if (type === "speaker" && !(s.kind === "speaker" || s.kind === "both")) return false;
       if (category !== "all" && !s.sessions.some((sess) => sess.categoryId === category)) return false;
       if (status !== "all" && s.overallStatus !== status) return false;
+      if (source !== "all" && s.source !== source) return false;
       if (orgQ && !(s.orgSectionName ?? "").toLowerCase().includes(orgQ)) return false;
       if (q) {
         const hit = titleOf(s).toLowerCase().includes(q) || s.speakers.some((sp) => sp.name.toLowerCase().includes(q));
@@ -56,7 +59,7 @@ export default function SubmissionsBrowser({ submissions, categories, sessionTyp
       }
       return true;
     });
-  }, [submissions, search, org, type, category, status]);
+  }, [submissions, search, org, type, category, status, source]);
 
   const modal = submissions.find((s) => s.id === modalId) ?? null;
 
@@ -90,6 +93,11 @@ export default function SubmissionsBrowser({ submissions, categories, sessionTyp
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
         </select>
+        <select className="input" style={{ width: "auto" }} value={source} onChange={(e) => setSource(e.target.value)}>
+          <option value="all">External + Internal</option>
+          <option value="external">External only</option>
+          <option value="internal">Internal (DM staff) only</option>
+        </select>
         <div style={{ marginLeft: "auto", alignSelf: "center", fontSize: 13, color: "var(--muted)" }}>
           {filtered.length} of {submissions.length} shown
         </div>
@@ -100,7 +108,7 @@ export default function SubmissionsBrowser({ submissions, categories, sessionTyp
           className="mono"
           style={{
             display: "grid",
-            gridTemplateColumns: "90px 1fr 180px 130px 120px",
+            gridTemplateColumns: "80px 1fr 150px 110px 130px 100px",
             gap: 12,
             padding: "13px 22px",
             borderBottom: "1px solid var(--line)",
@@ -116,6 +124,7 @@ export default function SubmissionsBrowser({ submissions, categories, sessionTyp
           <div>Title / Speaker</div>
           <div>Category</div>
           <div>Submitter</div>
+          <div>Source</div>
           <div>Status</div>
         </div>
         {filtered.map((r) => (
@@ -124,7 +133,7 @@ export default function SubmissionsBrowser({ submissions, categories, sessionTyp
             onClick={() => setModalId(r.id)}
             style={{
               display: "grid",
-              gridTemplateColumns: "90px 1fr 180px 130px 120px",
+              gridTemplateColumns: "80px 1fr 150px 110px 130px 100px",
               gap: 12,
               padding: "15px 22px",
               borderBottom: "1px solid var(--line)",
@@ -141,6 +150,9 @@ export default function SubmissionsBrowser({ submissions, categories, sessionTyp
             </div>
             <div style={{ fontSize: 13, color: "var(--muted)" }}>{r.sessions[0]?.categoryName ?? "—"}</div>
             <div style={{ fontSize: 13, color: "var(--muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.submitterName}</div>
+            <div>
+              <SourceBadge source={r.source} />
+            </div>
             <div>
               <StatusChip status={r.overallStatus} />
             </div>

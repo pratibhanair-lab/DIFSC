@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSubmissionConfirmation } from "@/lib/email";
-import type { SpeakerLocation } from "@/lib/types";
+import type { SpeakerLocation, SubmissionSource } from "@/lib/types";
 
 export type SubmitSpeakerInput = {
   name: string;
@@ -13,6 +13,7 @@ export type SubmitSpeakerInput = {
   topic: string;
   location: SpeakerLocation | "";
   affiliation: string;
+  commercialInvolvement: boolean;
 };
 
 export type SubmitSessionInput = {
@@ -22,11 +23,16 @@ export type SubmitSessionInput = {
   sessionTypeId: string;
   durationHours: number;
   partnerOrg: string;
+  previouslyPresented: boolean;
+  previouslyPresentedWhere: string;
+  previouslyPresentedWhen: string;
+  commercialInvolvement: boolean;
   speakers: SubmitSpeakerInput[];
 };
 
 export type SubmitPayload = {
   kind: "session" | "speaker" | "both";
+  source: SubmissionSource;
   subName: string;
   subEmail: string;
   subPhone: string;
@@ -51,6 +57,7 @@ function speakerRow(sp: SubmitSpeakerInput, submissionId: string, sessionId: str
     topic: sp.topic.trim(),
     location: sp.location || null,
     affiliation: sp.affiliation.trim() || null,
+    commercial_involvement: sp.commercialInvolvement,
   };
 }
 
@@ -94,6 +101,7 @@ export async function submitSuggestion(payload: SubmitPayload): Promise<SubmitRe
     .insert({
       reference,
       kind: payload.kind,
+      source: payload.source,
       submitter_name: name,
       submitter_email: email,
       submitter_phone: payload.subPhone.trim() || null,
@@ -118,6 +126,10 @@ export async function submitSuggestion(payload: SubmitPayload): Promise<SubmitRe
           session_type_id: s.sessionTypeId,
           recommended_duration_hours: s.durationHours,
           partner_org: s.partnerOrg.trim() || null,
+          previously_presented: s.previouslyPresented,
+          previously_presented_where: s.previouslyPresented ? s.previouslyPresentedWhere.trim() || null : null,
+          previously_presented_when: s.previouslyPresented ? s.previouslyPresentedWhen.trim() || null : null,
+          commercial_involvement: s.commercialInvolvement,
         })
         .select("id")
         .single();

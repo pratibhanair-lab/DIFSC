@@ -3,6 +3,7 @@ import { fetchAllSubmissions, titleOf } from "@/lib/submissions-view";
 import { createAdminClient } from "@/lib/supabase/admin";
 import StatusChip from "@/components/StatusChip";
 import TypeBadge from "@/components/TypeBadge";
+import SourceBadge from "@/components/SourceBadge";
 
 export const dynamic = "force-dynamic";
 
@@ -107,6 +108,7 @@ export default async function AdminOverviewPage() {
                 {r.submitterName} &middot; {r.orgSectionName ?? "—"}
               </div>
             </div>
+            <SourceBadge source={r.source} />
             <StatusChip status={r.overallStatus} />
           </div>
         ))}

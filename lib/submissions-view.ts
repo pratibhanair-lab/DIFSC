@@ -1,6 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { SessionStatus, SpeakerLocation, SpeakerStatus, SubmissionKind } from "@/lib/types";
+import type { SessionStatus, SpeakerLocation, SpeakerStatus, SubmissionKind, SubmissionSource } from "@/lib/types";
 
 export type SpeakerView = {
   id: string;
@@ -10,6 +10,7 @@ export type SpeakerView = {
   topic: string;
   location: SpeakerLocation | null;
   affiliation: string | null;
+  commercialInvolvement: boolean;
   status: SpeakerStatus;
 };
 
@@ -23,6 +24,10 @@ export type SessionView = {
   sessionTypeName: string;
   recommendedDurationHours: number;
   partnerOrg: string | null;
+  previouslyPresented: boolean;
+  previouslyPresentedWhere: string | null;
+  previouslyPresentedWhen: string | null;
+  commercialInvolvement: boolean;
   status: SessionStatus;
   reviewComment: string | null;
   speakers: SpeakerView[];
@@ -32,6 +37,7 @@ export type SubmissionView = {
   id: string;
   reference: string;
   kind: SubmissionKind;
+  source: SubmissionSource;
   submitterName: string;
   submitterEmail: string;
   submitterPhone: string | null;
@@ -103,6 +109,7 @@ export async function fetchAllSubmissions(): Promise<SubmissionView[]> {
       topic: sp.topic,
       location: sp.location,
       affiliation: sp.affiliation,
+      commercialInvolvement: sp.commercial_involvement,
       status: sp.status,
     };
   }
@@ -121,6 +128,10 @@ export async function fetchAllSubmissions(): Promise<SubmissionView[]> {
       sessionTypeName: typeMap.get(sessionRow.session_type_id) ?? "",
       recommendedDurationHours: sessionRow.recommended_duration_hours,
       partnerOrg: sessionRow.partner_org,
+      previouslyPresented: sessionRow.previously_presented,
+      previouslyPresentedWhere: sessionRow.previously_presented_where,
+      previouslyPresentedWhen: sessionRow.previously_presented_when,
+      commercialInvolvement: sessionRow.commercial_involvement,
       status: sessionRow.status,
       reviewComment: sessionRow.review_comment,
       speakers: (speakersBySession.get(sessionRow.id) ?? []).map(toSpeakerView),
@@ -141,6 +152,7 @@ export async function fetchAllSubmissions(): Promise<SubmissionView[]> {
       id: sub.id,
       reference: sub.reference,
       kind: sub.kind,
+      source: sub.source,
       submitterName: sub.submitter_name,
       submitterEmail: sub.submitter_email,
       submitterPhone: sub.submitter_phone,

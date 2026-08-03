@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import StatusChip from "@/components/StatusChip";
 import TypeBadge from "@/components/TypeBadge";
+import SourceBadge from "@/components/SourceBadge";
 import SpeakerCard from "@/components/SpeakerCard";
 import SessionReviewCard from "@/components/SessionReviewCard";
 import { decideSpeakerOnlySubmission } from "@/lib/actions/review";
@@ -69,6 +70,7 @@ export default function SubmissionDetailModal({
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
               <TypeBadge kind={submission.kind} />
+              <SourceBadge source={submission.source} />
               <StatusChip status={submission.overallStatus} />
               <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
                 {submission.reference}

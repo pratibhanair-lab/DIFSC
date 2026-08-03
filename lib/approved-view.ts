@@ -9,6 +9,7 @@ export type ApprovedSpeaker = {
   bio: string | null;
   location: SpeakerLocation | null;
   affiliation: string | null;
+  commercialInvolvement: boolean;
 };
 
 export type ApprovedSession = {
@@ -19,6 +20,10 @@ export type ApprovedSession = {
   sessionTypeName: string;
   recommendedDurationHours: number;
   partnerOrg: string | null;
+  previouslyPresented: boolean;
+  previouslyPresentedWhere: string | null;
+  previouslyPresentedWhen: string | null;
+  commercialInvolvement: boolean;
   speakers: ApprovedSpeaker[];
 };
 
@@ -36,8 +41,13 @@ export async function fetchApprovedListing(): Promise<ApprovedListing> {
   const admin = createAdminClient();
 
   const [{ data: sessions }, { data: speakers }, { data: categories }, { data: sessionTypes }] = await Promise.all([
-    admin.from("sessions").select("id, title, description, category_id, session_type_id, recommended_duration_hours, partner_org, status").eq("status", "approved"),
-    admin.from("speakers").select("id, session_id, name, topic, bio, location, affiliation, status").in("status", ["approved", "confirmed"]),
+    admin
+      .from("sessions")
+      .select(
+        "id, title, description, category_id, session_type_id, recommended_duration_hours, partner_org, previously_presented, previously_presented_where, previously_presented_when, commercial_involvement, status"
+      )
+      .eq("status", "approved"),
+    admin.from("speakers").select("id, session_id, name, topic, bio, location, affiliation, commercial_involvement, status").in("status", ["approved", "confirmed"]),
     admin.from("categories").select("id,name"),
     admin.from("session_types").select("id,name"),
   ]);
@@ -58,7 +68,15 @@ export async function fetchApprovedListing(): Promise<ApprovedListing> {
   });
 
   function toApprovedSpeaker(sp: NonNullable<typeof speakers>[number]): ApprovedSpeaker {
-    return { id: sp.id, name: sp.name, topic: sp.topic, bio: sp.bio, location: sp.location, affiliation: sp.affiliation };
+    return {
+      id: sp.id,
+      name: sp.name,
+      topic: sp.topic,
+      bio: sp.bio,
+      location: sp.location,
+      affiliation: sp.affiliation,
+      commercialInvolvement: sp.commercial_involvement,
+    };
   }
 
   const approvedSessions: ApprovedSession[] = (sessions ?? []).map((s) => ({
@@ -69,6 +87,10 @@ export async function fetchApprovedListing(): Promise<ApprovedListing> {
     sessionTypeName: typeMap.get(s.session_type_id) ?? "",
     recommendedDurationHours: s.recommended_duration_hours,
     partnerOrg: s.partner_org,
+    previouslyPresented: s.previously_presented,
+    previouslyPresentedWhere: s.previously_presented_where,
+    previouslyPresentedWhen: s.previously_presented_when,
+    commercialInvolvement: s.commercial_involvement,
     speakers: (speakersBySession.get(s.id) ?? []).map(toApprovedSpeaker),
   }));
 

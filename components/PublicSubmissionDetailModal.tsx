@@ -26,6 +26,11 @@ function PublicSpeakerLine({ speaker }: { speaker: SpeakerView }) {
       <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
         Would speak on: <span style={{ color: "var(--ink)" }}>{speaker.topic}</span>
       </div>
+      {speaker.commercialInvolvement && (
+        <div style={{ fontSize: 12.5, color: "var(--accent)", marginTop: 4, fontWeight: 600 }}>
+          &#9888; Involves commercial products or services
+        </div>
+      )}
     </div>
   );
 }
@@ -60,6 +65,19 @@ function PublicSessionBlock({ session }: { session: SessionView }) {
         <div style={{ marginTop: 14 }}>
           <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 2 }}>Partner organization</div>
           <div style={{ fontSize: 14, fontWeight: 600 }}>{session.partnerOrg}</div>
+        </div>
+      )}
+      {session.previouslyPresented && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 2 }}>Previously presented</div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>
+            {[session.previouslyPresentedWhere, session.previouslyPresentedWhen].filter(Boolean).join(" · ") || "Yes"}
+          </div>
+        </div>
+      )}
+      {session.commercialInvolvement && (
+        <div style={{ marginTop: 14, fontSize: 13, color: "var(--accent)", fontWeight: 600 }}>
+          &#9888; Involves commercial products or services
         </div>
       )}
       {session.speakers.length > 0 && (

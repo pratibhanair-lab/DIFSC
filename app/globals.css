@@ -166,6 +166,14 @@ textarea {
   color: #fff;
   background: var(--accent);
 }
+.chip-source-external {
+  color: #1d5aa6;
+  background: #e4eef9;
+}
+.chip-source-internal {
+  color: #6d3fc4;
+  background: #f1e9fb;
+}
 
 .badge {
   display: inline-block;

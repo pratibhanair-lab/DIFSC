@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import { submitSuggestion, type SubmitSessionInput, type SubmitSpeakerInput } from "@/lib/actions/submissions";
-import type { SpeakerLocation } from "@/lib/types";
+import type { SpeakerLocation, SubmissionSource } from "@/lib/types";
 
 type Lookup = { id: string; name: string };
 
@@ -27,7 +27,7 @@ const KIND_OPTIONS: { key: Kind; label: string; desc: string }[] = [
 ];
 
 function blankSpeaker(): SubmitSpeakerInput {
-  return { name: "", contact: "", bio: "", topic: "", location: "", affiliation: "" };
+  return { name: "", contact: "", bio: "", topic: "", location: "", affiliation: "", commercialInvolvement: false };
 }
 
 function blankSession(withSpeaker: boolean): SubmitSessionInput {
@@ -38,12 +38,38 @@ function blankSession(withSpeaker: boolean): SubmitSessionInput {
     sessionTypeId: "",
     durationHours: 1,
     partnerOrg: "",
+    previouslyPresented: false,
+    previouslyPresentedWhere: "",
+    previouslyPresentedWhen: "",
+    commercialInvolvement: false,
     speakers: withSpeaker ? [blankSpeaker()] : [],
   };
 }
 
 function labelStyle(): React.CSSProperties {
   return { display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 };
+}
+
+/** Small yes/no toggle used for the "previously presented" and "commercial involvement" questions. */
+function YesNoToggle({ value, onChange }: { value: boolean; onChange: (val: boolean) => void }) {
+  return (
+    <div style={{ display: "flex", gap: 8 }}>
+      {[
+        { val: false, label: "No" },
+        { val: true, label: "Yes" },
+      ].map((opt) => (
+        <button
+          key={opt.label}
+          type="button"
+          onClick={() => onChange(opt.val)}
+          className={value === opt.val ? "btn btn-primary" : "btn btn-outline"}
+          style={{ fontSize: 13, padding: "7px 18px" }}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 /** Shared fields for one speaker, used both standalone and nested under a session. */
@@ -112,12 +138,16 @@ function SpeakerFields({
           placeholder="Relevant experience, affiliation, notable work..."
         />
       </label>
-      <label style={{ display: "block" }}>
+      <label style={{ display: "block", marginBottom: 14 }}>
         <span style={labelStyle()}>
           Topic they&apos;d speak on <span style={{ color: "var(--rej)" }}>*</span>
         </span>
         <input className="input" style={{ background: "var(--surface)" }} value={sp.topic} onChange={(e) => onChange({ topic: e.target.value })} placeholder="Free text - what they'd present" />
       </label>
+      <div>
+        <span style={labelStyle()}>Does this involve any commercial products or services?</span>
+        <YesNoToggle value={sp.commercialInvolvement} onChange={(val) => onChange({ commercialInvolvement: val })} />
+      </div>
     </div>
   );
 }
@@ -127,11 +157,23 @@ export default function SuggestionForm({
   sessionTypes,
   orgSections,
   initialSubmitter,
+  source,
+  showNavTabs = false,
+  showDeadlineNotice = false,
+  showOrgSection = true,
 }: {
   categories: Lookup[];
   sessionTypes: Lookup[];
   orgSections: Lookup[];
   initialSubmitter?: InitialSubmitter | null;
+  /** Which page this form is mounted on — recorded on every submission so admins can tell the two tracks apart. */
+  source: SubmissionSource;
+  /** Row of links to the public Overview/Submissions/Programme/Approved pages. */
+  showNavTabs?: boolean;
+  /** Submission-deadline + conference-theme note shown under the intro paragraph. */
+  showDeadlineNotice?: boolean;
+  /** "Organization section" field under Your details — only relevant for DM staff. */
+  showOrgSection?: boolean;
 }) {
   const [phase, setPhase] = useState<"form" | "confirm">("form");
   const [confirmName, setConfirmName] = useState("");
@@ -187,6 +229,7 @@ export default function SuggestionForm({
     setSubmitting(true);
     const result = await submitSuggestion({
       kind,
+      source,
       subName,
       subEmail,
       subPhone,
@@ -322,20 +365,35 @@ export default function SuggestionForm({
           evaluates every suggestion before scheduling.
         </p>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "0 0 32px" }}>
-          <Link href="/overview" className="btn btn-outline" style={{ fontSize: 13 }}>
-            Overview dashboard
-          </Link>
-          <Link href="/submissions" className="btn btn-outline" style={{ fontSize: 13 }}>
-            All submissions
-          </Link>
-          <Link href="/programme" className="btn btn-outline" style={{ fontSize: 13 }}>
-            Conference programme
-          </Link>
-          <Link href="/approved" className="btn btn-outline" style={{ fontSize: 13 }}>
-            Approved sessions &amp; speakers
-          </Link>
-        </div>
+        {showDeadlineNotice && (
+          <div
+            className="card"
+            style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, background: "var(--accent-weak)", border: "1px solid var(--accent)" }}
+          >
+            <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: 0, color: "var(--accent-ink)" }}>
+              Submissions are open until <strong>31 August 2026</strong>. Topics that align with this year&apos;s
+              conference theme &mdash; <strong>Building Intelligent Food Systems: The future with AI</strong> &mdash;
+              will be prioritized for selection.
+            </p>
+          </div>
+        )}
+
+        {showNavTabs && (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "0 0 32px" }}>
+            <Link href="/overview" className="btn btn-outline" style={{ fontSize: 13 }}>
+              Overview dashboard
+            </Link>
+            <Link href="/submissions" className="btn btn-outline" style={{ fontSize: 13 }}>
+              All submissions
+            </Link>
+            <Link href="/programme" className="btn btn-outline" style={{ fontSize: 13 }}>
+              Conference programme
+            </Link>
+            <Link href="/approved" className="btn btn-outline" style={{ fontSize: 13 }}>
+              Approved sessions &amp; speakers
+            </Link>
+          </div>
+        )}
 
         <div className="mono" style={{ fontSize: 12, fontWeight: 500, letterSpacing: ".03em", color: "var(--muted)", textTransform: "uppercase", marginBottom: 12 }}>
           What are you suggesting?
@@ -397,17 +455,19 @@ export default function SuggestionForm({
               <span style={labelStyle()}>Phone</span>
               <input className="input" value={subPhone} onChange={(e) => setSubPhone(e.target.value)} placeholder="+971 ..." />
             </label>
-            <label style={{ display: "block" }}>
-              <span style={labelStyle()}>Organization section</span>
-              <select className="input" value={orgSectionId} onChange={(e) => setOrgSectionId(e.target.value)}>
-                <option value="">Select a section...</option>
-                {orgSections.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {showOrgSection && (
+              <label style={{ display: "block" }}>
+                <span style={labelStyle()}>Organization section</span>
+                <select className="input" value={orgSectionId} onChange={(e) => setOrgSectionId(e.target.value)}>
+                  <option value="">Select a section...</option>
+                  {orgSections.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
         </div>
 
@@ -510,6 +570,38 @@ export default function SuggestionForm({
                   placeholder="Optional - co-organizing or supporting organization"
                 />
               </label>
+
+              <div style={{ marginTop: 16 }}>
+                <span style={labelStyle()}>Has this session been presented anywhere before?</span>
+                <YesNoToggle value={s.previouslyPresented} onChange={(val) => updateSession(sIdx, { previouslyPresented: val })} />
+              </div>
+              {s.previouslyPresented && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
+                  <label style={{ display: "block" }}>
+                    <span style={labelStyle()}>Where</span>
+                    <input
+                      className="input"
+                      value={s.previouslyPresentedWhere}
+                      onChange={(e) => updateSession(sIdx, { previouslyPresentedWhere: e.target.value })}
+                      placeholder="Event or venue name"
+                    />
+                  </label>
+                  <label style={{ display: "block" }}>
+                    <span style={labelStyle()}>When</span>
+                    <input
+                      className="input"
+                      value={s.previouslyPresentedWhen}
+                      onChange={(e) => updateSession(sIdx, { previouslyPresentedWhen: e.target.value })}
+                      placeholder="e.g. March 2025"
+                    />
+                  </label>
+                </div>
+              )}
+
+              <div style={{ marginTop: 16 }}>
+                <span style={labelStyle()}>Does this session involve any commercial products or services?</span>
+                <YesNoToggle value={s.commercialInvolvement} onChange={(val) => updateSession(sIdx, { commercialInvolvement: val })} />
+              </div>
 
               {showNestedSpeakers && (
                 <div style={{ marginTop: 22, paddingTop: 20, borderTop: "1px dashed var(--line)" }}>

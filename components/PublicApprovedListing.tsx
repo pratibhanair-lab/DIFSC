@@ -8,6 +8,11 @@ function SpeakerLine({ speaker }: { speaker: ApprovedSpeaker }) {
       {meta && <div style={{ fontSize: 12, color: "var(--muted)" }}>{meta}</div>}
       <div style={{ fontSize: 13, marginTop: 2 }}>{speaker.topic}</div>
       {speaker.bio && <p style={{ fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5, margin: "4px 0 0" }}>{speaker.bio}</p>}
+      {speaker.commercialInvolvement && (
+        <div style={{ fontSize: 12, color: "var(--accent)", marginTop: 4, fontWeight: 600 }}>
+          &#9888; Involves commercial products or services
+        </div>
+      )}
     </div>
   );
 }
@@ -39,7 +44,15 @@ export default function PublicApprovedListing({ listing }: { listing: ApprovedLi
             <div style={{ fontSize: 12.5, color: "var(--muted)" }}>
               {s.recommendedDurationHours} {s.recommendedDurationHours > 1 ? "hours" : "hour"}
               {s.partnerOrg ? ` · Partner: ${s.partnerOrg}` : ""}
+              {s.previouslyPresented
+                ? ` · Previously presented${[s.previouslyPresentedWhere, s.previouslyPresentedWhen].filter(Boolean).length ? ": " + [s.previouslyPresentedWhere, s.previouslyPresentedWhen].filter(Boolean).join(" · ") : ""}`
+                : ""}
             </div>
+            {s.commercialInvolvement && (
+              <div style={{ fontSize: 12.5, color: "var(--accent)", marginTop: 6, fontWeight: 600 }}>
+                &#9888; Involves commercial products or services
+              </div>
+            )}
             {s.speakers.length > 0 && (
               <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--line)" }}>
                 {s.speakers.map((sp) => (

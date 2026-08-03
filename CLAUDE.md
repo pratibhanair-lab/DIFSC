@@ -8,6 +8,13 @@ Public session/speaker submission + admin review + scheduling tool for the
 language, avoid jargon, and confirm before anything destructive or
 public-facing (pushing, deploying, deleting data).
 
+There are two submission entry points feeding the same review pipeline: `/`
+for external/public submitters and `/proposals` for internal Dubai
+Municipality staff. Every submission is tagged `source: "external" |
+"internal"` automatically (based on which page it came from, never
+submitter-chosen) so admins can tell the two tracks apart — see Routes and
+Conventions below.
+
 ## Stack
 
 - Next.js 16 (App Router, Turbopack). **Note:** `middleware.ts` is now
@@ -30,6 +37,13 @@ public-facing (pushing, deploying, deleting data).
   constraint (a submission can now hold multiple sessions), and dropped
   `submissions.link_speakers_to_session` (obsolete now that speakers nest
   under a specific session block in the form instead of a yes/no flag).
+  `0003_prior_presentation_and_commercial.sql` and
+  `0004_submission_source.sql` add `sessions.previously_presented` (+
+  `_where` / `_when` text fields), `commercial_involvement` on both
+  `sessions` and `speakers`, and `submissions.source`
+  (`'external' | 'internal'`, not null, default `'external'`) — see the
+  intro section above. **Check with the user whether these two have been
+  run in Supabase yet** before assuming the columns exist in production.
 - `lib/types.ts` — shared TS types mirroring the schema.
 - `lib/supabase/server.ts` — auth-only client (cookie-bound, anon key). Only
   used for login/logout/`getUser()`.
@@ -50,7 +64,15 @@ public-facing (pushing, deploying, deleting data).
 - `components/SessionReviewCard.tsx` — self-contained per-session
   approve/revise/reject card (mirrors `SpeakerCard.tsx`'s pattern), reused by
   both `ReviewQueue.tsx` and `SubmissionDetailModal.tsx` since a submission
-  can now contain multiple sessions.
+  can now contain multiple sessions. Also displays the previously-presented
+  (where/when) and commercial-involvement fields when set;
+  `SpeakerCard.tsx` displays commercial-involvement for individual speakers.
+- `components/SourceBadge.tsx` — small chip showing "External" or "Internal
+  (DM staff)" based on `SubmissionView.source` / `Submission.source`.
+  Admin-only: used in `ReviewQueue.tsx`, `SubmissionsBrowser.tsx`,
+  `SubmissionDetailModal.tsx`, and `app/admin/page.tsx`, but deliberately
+  **not** in any of the `Public*` components — see the source-tracking note
+  in Conventions below.
 - `proxy.ts` — route protection for `/admin`, `/review`, `/schedule`
   (optimistic redirect only). The real role check is `requireRole()`, called
   on every protected page and Server Action. `/programme` and `/approved`
@@ -72,18 +94,31 @@ public-facing (pushing, deploying, deleting data).
   approve/reject/revise/delete controls.
 - `components/ShareScheduleButton.tsx` — client component on the admin
   `/schedule` page that copies the `/programme` URL to the clipboard.
-- Routes: `/` (public form — also has nav buttons to the four public pages
-  below), `/login`, `/admin` (+ `/admin/submissions`, `/admin/setup` =
-  categories/session types/org sections/halls, `/admin/referees`),
-  `/review` (admin + referee shared queue), `/schedule` (admin only, own
-  header, not under `/admin`'s layout), `/programme` (public, no login,
-  read-only conference programme — shareable link, reuses
-  `fetchScheduleBoard`), `/approved` (public, no login — every approved
-  session + speaker regardless of whether it's been scheduled yet, reuses
-  `fetchApprovedListing`), `/overview` (public, no login — read-only copy of
-  the admin overview dashboard, reuses `fetchAllSubmissions`), `/submissions`
-  (public, no login — read-only copy of `/admin/submissions`, reuses
-  `fetchAllSubmissions`).
+- `components/SuggestionForm.tsx` — the one submission form, mounted by both
+  `/` and `/proposals` with different props: `source` (required —
+  `"external"` on `/`, `"internal"` on `/proposals`, stamped onto every
+  submission it creates), `showNavTabs` (nav buttons to the four public
+  pages — off on `/`, on on `/proposals`), `showDeadlineNotice` (the
+  submission-deadline/theme callout — on on `/`, off on `/proposals`), and
+  `showOrgSection` (the "Organization section" field under Your details —
+  off on `/`, on by default on `/proposals`, since only DM staff belong to a
+  section). When changing the form, check both pages' props before assuming
+  a change should apply to both tracks.
+- Routes: `/` (public external-submitter form — no nav buttons, no
+  organization-section field, shows the deadline/theme notice), `/proposals`
+  (internal Dubai Municipality staff form — same component, nav buttons to
+  the four public pages below, has the organization-section field, no
+  deadline notice; **not** login-protected, see Known limitations), `/login`,
+  `/admin` (+ `/admin/submissions`, `/admin/setup` = categories/session
+  types/org sections/halls, `/admin/referees`), `/review` (admin + referee
+  shared queue), `/schedule` (admin only, own header, not under `/admin`'s
+  layout), `/programme` (public, no login, read-only conference programme —
+  shareable link, reuses `fetchScheduleBoard`), `/approved` (public, no
+  login — every approved session + speaker regardless of whether it's been
+  scheduled yet, reuses `fetchApprovedListing`), `/overview` (public, no
+  login — read-only copy of the admin overview dashboard, reuses
+  `fetchAllSubmissions`), `/submissions` (public, no login — read-only copy
+  of `/admin/submissions`, reuses `fetchAllSubmissions`).
 
 ## Conventions
 
@@ -107,8 +142,14 @@ public-facing (pushing, deploying, deleting data).
   confirmed" button on `SpeakerCard` (`review.ts: decideSpeaker`).
 - The public form remembers a returning submitter's name/email/phone/org
   section via a plain browser cookie (`difsc_submitter`, set client-side in
-  `SuggestionForm.tsx`, read server-side in `app/page.tsx`) — not a login,
-  just a convenience pre-fill.
+  `SuggestionForm.tsx`, read server-side in `app/page.tsx` /
+  `app/proposals/page.tsx`) — not a login, just a convenience pre-fill.
+- `submissions.source` (`"external" | "internal"`) is set once at insert
+  time from the `source` prop the submitting page passed to
+  `SuggestionForm` — it is never a form field the submitter fills in, so it
+  can't be mistyped or gamed. Shown to admins via `SourceBadge`; kept off
+  every public-facing page (submitter contact info follows the same
+  admin-only pattern).
 
 ## Known limitations / deliberate scope decisions
 
@@ -124,6 +165,12 @@ public-facing (pushing, deploying, deleting data).
 - Referees do **not** get a welcome email when created (explicitly declined
   by the user) — the admin sees the temp password once in the Referees UI
   and shares it manually.
+- `/proposals` (the "internal DM staff" submission form) is **not**
+  login-protected — it's a plain public URL, same as `/`. The
+  external/internal distinction is a labeling convenience for reviewers
+  (who submitted through which page), not an access-control boundary;
+  anyone with the link can use either form. Don't assume `source ===
+  "internal"` implies the submitter's identity was verified.
 - `/programme`, `/approved`, `/overview`, and `/submissions` are all fully
   open public links (no login, no secret token) by the user's explicit
   choice. `/programme` shows every scheduled session regardless of

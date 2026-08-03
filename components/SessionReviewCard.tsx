@@ -81,6 +81,20 @@ export default function SessionReviewCard({
         </div>
       )}
 
+      {session.previouslyPresented && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 2 }}>Previously presented</div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>
+            {[session.previouslyPresentedWhere, session.previouslyPresentedWhen].filter(Boolean).join(" · ") || "Yes"}
+          </div>
+        </div>
+      )}
+      {session.commercialInvolvement && (
+        <div style={{ marginTop: 14, fontSize: 13, color: "var(--accent)", fontWeight: 600 }}>
+          &#9888; Involves commercial products or services
+        </div>
+      )}
+
       {session.speakers.length > 0 && (
         <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
           <div className="mono" style={{ fontSize: 11, letterSpacing: ".04em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>

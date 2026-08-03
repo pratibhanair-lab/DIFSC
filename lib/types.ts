@@ -12,6 +12,8 @@ export type SessionStatus = "pending" | "approved" | "rejected";
 export type SpeakerStatus = "pending" | "approved" | "confirmed" | "rejected";
 export type SubmissionKind = "session" | "speaker" | "both";
 export type SpeakerLocation = "International" | "GCC" | "UAE" | "DM";
+/** external = public home page (/), internal = Dubai Municipality staff page (/proposals). */
+export type SubmissionSource = "external" | "internal";
 
 export type Category = { id: string; name: string };
 export type SessionType = { id: string; name: string };
@@ -28,6 +30,7 @@ export type Speaker = {
   topic: string;
   location: SpeakerLocation | null;
   affiliation: string | null;
+  commercial_involvement: boolean;
   status: SpeakerStatus;
   review_comment: string | null;
 };
@@ -41,6 +44,10 @@ export type SessionRow = {
   session_type_id: string;
   recommended_duration_hours: number;
   partner_org: string | null;
+  previously_presented: boolean;
+  previously_presented_where: string | null;
+  previously_presented_when: string | null;
+  commercial_involvement: boolean;
   status: SessionStatus;
   review_comment: string | null;
 };
@@ -49,6 +56,7 @@ export type Submission = {
   id: string;
   reference: string;
   kind: SubmissionKind;
+  source: SubmissionSource;
   submitter_name: string;
   submitter_email: string;
   submitter_phone: string | null;
