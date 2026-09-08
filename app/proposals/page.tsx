@@ -39,6 +39,7 @@ export default async function ProposalsPage() {
       initialSubmitter={initialSubmitter}
       source="internal"
       showNavTabs
+      showPosterLink
     />
   );
 }

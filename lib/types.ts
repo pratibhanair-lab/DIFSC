@@ -63,3 +63,20 @@ export type Submission = {
   org_section_id: string | null;
   created_at: string;
 };
+
+export type PosterStatus = "pending" | "approved" | "rejected";
+
+export type PosterSubmission = {
+  id: string;
+  reference: string;
+  presenter_name: string;
+  affiliation: string | null;
+  email: string;
+  phone: string | null;
+  title: string;
+  abstract: string;
+  category_id: string;
+  status: PosterStatus;
+  review_comment: string | null;
+  created_at: string;
+};

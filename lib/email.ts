@@ -38,6 +38,49 @@ export async function sendSubmissionConfirmation(opts: {
   if (error) throw new Error(`Resend: ${error.message}`);
 }
 
+export async function sendPosterConfirmation(opts: {
+  to: string;
+  name: string;
+  reference: string;
+}) {
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: opts.to,
+    subject: `We received your poster submission — ${opts.reference}`,
+    html: wrapper(
+      "Poster submission received",
+      `<p>Thank you, ${opts.name}. Your poster submission for the 20th Dubai International Food Safety Conference has been sent to the review committee.</p>
+       <p>Your reference number is <strong>${opts.reference}</strong> — keep it handy if you follow up with us.</p>
+       <p>We'll email you again as soon as a decision has been made.</p>`
+    ),
+  });
+  if (error) throw new Error(`Resend: ${error.message}`);
+}
+
+export async function sendPosterDecisionEmail(opts: {
+  to: string;
+  name: string;
+  reference: string;
+  title: string;
+  approved: boolean;
+  comment?: string | null;
+}) {
+  const verb = opts.approved ? "approved" : "not selected";
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: opts.to,
+    subject: `${opts.approved ? "Approved" : "Update"}: ${opts.title} (${opts.reference})`,
+    html: wrapper(
+      opts.approved ? "Your poster was approved" : "An update on your poster submission",
+      `<p>Hi ${opts.name},</p>
+       <p>Your poster <strong>${opts.title}</strong> (ref. ${opts.reference}) has been <strong>${verb}</strong> by the programme committee.</p>
+       ${opts.comment ? `<p style="background:#FAF9F5;border-radius:10px;padding:14px;">${opts.comment}</p>` : ""}
+       ${opts.approved ? "<p>We'll be in touch with further details closer to the conference.</p>" : "<p>Thank you for contributing to the programme — we hope you'll submit again in the future.</p>"}`
+    ),
+  });
+  if (error) throw new Error(`Resend: ${error.message}`);
+}
+
 export async function sendSessionDecisionEmail(opts: {
   to: string;
   name: string;

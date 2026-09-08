@@ -40,6 +40,7 @@ export default async function HomePage() {
       source="external"
       showDeadlineNotice
       showOrgSection={false}
+      showPosterLink
     />
   );
 }

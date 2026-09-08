@@ -161,6 +161,7 @@ export default function SuggestionForm({
   showNavTabs = false,
   showDeadlineNotice = false,
   showOrgSection = true,
+  showPosterLink = false,
 }: {
   categories: Lookup[];
   sessionTypes: Lookup[];
@@ -174,6 +175,8 @@ export default function SuggestionForm({
   showDeadlineNotice?: boolean;
   /** "Organization section" field under Your details — only relevant for DM staff. */
   showOrgSection?: boolean;
+  /** Callout linking to the separate poster-submission track (/posters). */
+  showPosterLink?: boolean;
 }) {
   const [phase, setPhase] = useState<"form" | "confirm">("form");
   const [confirmName, setConfirmName] = useState("");
@@ -371,10 +374,19 @@ export default function SuggestionForm({
             style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, background: "var(--accent-weak)", border: "1px solid var(--accent)" }}
           >
             <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: 0, color: "var(--accent-ink)" }}>
-              Submissions are open until <strong>31 August 2026</strong>. Topics that align with this year&apos;s
+              Submissions are open until <strong>20 September 2026</strong>. Topics that align with this year&apos;s
               conference theme &mdash; <strong>Building Intelligent Food Systems: The future with AI</strong> &mdash;
               will be prioritized for selection.
             </p>
+          </div>
+        )}
+
+        {showPosterLink && (
+          <div className="card" style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <p style={{ fontSize: 13.5, lineHeight: 1.5, margin: 0 }}>Presenting a poster instead? We have a separate short form for that.</p>
+            <Link href="/posters" className="btn btn-outline" style={{ fontSize: 13, whiteSpace: "nowrap" }}>
+              Submit a poster &rarr;
+            </Link>
           </div>
         )}
 
@@ -391,6 +403,9 @@ export default function SuggestionForm({
             </Link>
             <Link href="/approved" className="btn btn-outline" style={{ fontSize: 13 }}>
               Approved sessions &amp; speakers
+            </Link>
+            <Link href="/posters/approved" className="btn btn-outline" style={{ fontSize: 13 }}>
+              Approved posters
             </Link>
           </div>
         )}

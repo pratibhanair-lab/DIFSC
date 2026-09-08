@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { fetchAllSubmissions } from "@/lib/submissions-view";
+import { fetchPosterSubmissions } from "@/lib/posters-view";
 import { createAdminClient } from "@/lib/supabase/admin";
 import ThemeToggle from "@/components/ThemeToggle";
 import ReviewQueue from "@/components/ReviewQueue";
@@ -10,13 +11,14 @@ export const dynamic = "force-dynamic";
 
 export default async function ReviewPage() {
   const user = await requireRole(["admin", "referee"]);
-  const [submissions, admin] = [await fetchAllSubmissions(), createAdminClient()];
+  const [submissions, posters, admin] = [await fetchAllSubmissions(), await fetchPosterSubmissions(), createAdminClient()];
   const [{ data: categories }, { data: sessionTypes }] = await Promise.all([
     admin.from("categories").select("id,name").order("name"),
     admin.from("session_types").select("id,name").order("name"),
   ]);
 
   const pending = submissions.filter((s) => s.overallStatus === "pending");
+  const pendingPosters = posters.filter((p) => p.status === "pending");
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -71,7 +73,7 @@ export default async function ReviewPage() {
           <LogoutLink />
         </div>
       </header>
-      <ReviewQueue pending={pending} categories={categories ?? []} sessionTypes={sessionTypes ?? []} />
+      <ReviewQueue pending={pending} pendingPosters={pendingPosters} categories={categories ?? []} sessionTypes={sessionTypes ?? []} />
     </div>
   );
 }

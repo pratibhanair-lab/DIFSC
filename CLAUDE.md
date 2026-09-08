@@ -15,6 +15,14 @@ Municipality staff. Every submission is tagged `source: "external" |
 submitter-chosen) so admins can tell the two tracks apart — see Routes and
 Conventions below.
 
+There's also a separate, simpler **poster submission** track at `/posters`
+(one presenter, one poster, no session/speaker nesting) that feeds into its
+own `poster_submissions` table but is reviewed through the same `/review`
+queue — see the poster-specific entries under Where things live.
+
+Submissions (both tracks, and posters) are open until **20 September 2026**
+— this is currently just a date shown in the UI, not enforced anywhere.
+
 ## Stack
 
 - Next.js 16 (App Router, Turbopack). **Note:** `middleware.ts` is now
@@ -42,9 +50,11 @@ Conventions below.
   `_where` / `_when` text fields), `commercial_involvement` on both
   `sessions` and `speakers`, and `submissions.source`
   (`'external' | 'internal'`, not null, default `'external'`) — see the
-  intro section above. **Check with the user whether these two have been
-  run in Supabase yet** before assuming the columns exist in production.
-- `lib/types.ts` — shared TS types mirroring the schema.
+  intro section above. `0005_poster_submissions.sql` (applied) adds the
+  standalone `poster_submissions` table (its own `reference` sequence,
+  `DFSC-P-2026-XXX`) — see the poster-specific entries below.
+- `lib/types.ts` — shared TS types mirroring the schema, including
+  `PosterStatus` / `PosterSubmission`.
 - `lib/supabase/server.ts` — auth-only client (cookie-bound, anon key). Only
   used for login/logout/`getUser()`.
 - `lib/supabase/admin.ts` — secret-key client. **All** table reads/writes go
@@ -53,20 +63,37 @@ Conventions below.
   data access. RLS is enabled as a defense-in-depth safety net only.
 - `lib/actions/*.ts` — all Server Actions (`"use server"`), one file per
   feature area: `submissions`, `auth`, `referees`, `lookups`, `review`,
-  `schedule`.
+  `schedule`, `posters` (`submitPoster`, `decidePoster` — the poster
+  equivalent of `submissions.ts` + `review.ts`, but simpler since a poster is
+  one row with no session/speaker nesting).
 - `lib/submissions-view.ts` / `lib/schedule-view.ts` / `lib/approved-view.ts`
-  — read-model helpers that join raw tables into the shapes the UI needs.
-  Reuse these instead of re-querying tables directly. A `SubmissionView` now
-  holds `sessions: SessionView[]` (a submission can have several session
-  topics, each with its own nested `speakers`) plus a top-level `speakers`
-  array for speaker-only submissions not tied to any session. `overallStatus`
-  is still the one derived status driving the review queue and counts.
+  / `lib/posters-view.ts` — read-model helpers that join raw tables into the
+  shapes the UI needs. Reuse these instead of re-querying tables directly. A
+  `SubmissionView` now holds `sessions: SessionView[]` (a submission can have
+  several session topics, each with its own nested `speakers`) plus a
+  top-level `speakers` array for speaker-only submissions not tied to any
+  session. `overallStatus` is still the one derived status driving the
+  review queue and counts. `posters-view.ts` exports
+  `fetchPosterSubmissions()` (all posters, admin-only, includes
+  email/phone/review fields — used by `/review` and `/admin`) and
+  `fetchApprovedPosters()` (approved-only, no contact info — used by the
+  public `/posters/approved`).
 - `components/SessionReviewCard.tsx` — self-contained per-session
   approve/revise/reject card (mirrors `SpeakerCard.tsx`'s pattern), reused by
   both `ReviewQueue.tsx` and `SubmissionDetailModal.tsx` since a submission
   can now contain multiple sessions. Also displays the previously-presented
   (where/when) and commercial-involvement fields when set;
   `SpeakerCard.tsx` displays commercial-involvement for individual speakers.
+- `components/PosterReviewCard.tsx` — the poster equivalent of
+  `SessionReviewCard.tsx` (approve/reject + optional comment, no
+  revise step since there's nothing to revise into categories/session
+  types). Used only in `ReviewQueue.tsx`.
+- `components/ReviewQueue.tsx` — merges pending `SubmissionView[]` and
+  pending `PosterView[]` into one discriminated-union list (`QueueItem =
+  { type: "submission" | "poster" }`) so admins/referees review both
+  sessions/speakers and posters from a single queue. `TypeBadge` gets a
+  `"poster"` kind for this; `SourceBadge` is skipped for poster items since
+  posters have no `source`/org-section concept.
 - `components/SourceBadge.tsx` — small chip showing "External" or "Internal
   (DM staff)" based on `SubmissionView.source` / `Submission.source`.
   Admin-only: used in `ReviewQueue.tsx`, `SubmissionsBrowser.tsx`,
@@ -86,6 +113,9 @@ Conventions below.
   `/approved`: read-only cards, no Server Action calls, no decision buttons.
   Any new public-facing view should follow this pattern rather than reusing
   an admin component that has action buttons wired in.
+- `components/PublicPosterListing.tsx` — same pattern, for
+  `/posters/approved`: approved posters only, title/presenter/affiliation/
+  abstract, no email/phone, no action buttons.
 - `components/PublicSubmissionsBrowser.tsx` /
   `components/PublicSubmissionDetailModal.tsx` — read-only counterparts of
   `SubmissionsBrowser.tsx` / `SubmissionDetailModal.tsx` for `/submissions`.
@@ -97,28 +127,43 @@ Conventions below.
 - `components/SuggestionForm.tsx` — the one submission form, mounted by both
   `/` and `/proposals` with different props: `source` (required —
   `"external"` on `/`, `"internal"` on `/proposals`, stamped onto every
-  submission it creates), `showNavTabs` (nav buttons to the four public
+  submission it creates), `showNavTabs` (nav buttons to the five public
   pages — off on `/`, on on `/proposals`), `showDeadlineNotice` (the
   submission-deadline/theme callout — on on `/`, off on `/proposals`), and
   `showOrgSection` (the "Organization section" field under Your details —
   off on `/`, on by default on `/proposals`, since only DM staff belong to a
-  section). When changing the form, check both pages' props before assuming
-  a change should apply to both tracks.
+  section), and `showPosterLink` (a small callout linking to `/posters` for
+  people who meant to submit a poster instead — on on both `/` and
+  `/proposals`). When changing the form, check both pages' props before
+  assuming a change should apply to both tracks.
+- `components/PosterSubmissionForm.tsx` — the standalone poster form
+  (`/posters`): presenter name/affiliation/email/phone, poster
+  title/abstract (client-side word counter, 300-word cap enforced again
+  server-side in `submitPoster`)/category. Not a `SuggestionForm` variant —
+  kept separate on purpose since a poster has no session/speaker nesting and
+  reusing the bigger form would have meant threading a lot of conditional
+  logic through it for one field set.
 - Routes: `/` (public external-submitter form — no nav buttons, no
-  organization-section field, shows the deadline/theme notice), `/proposals`
-  (internal Dubai Municipality staff form — same component, nav buttons to
-  the four public pages below, has the organization-section field, no
-  deadline notice; **not** login-protected, see Known limitations), `/login`,
-  `/admin` (+ `/admin/submissions`, `/admin/setup` = categories/session
-  types/org sections/halls, `/admin/referees`), `/review` (admin + referee
-  shared queue), `/schedule` (admin only, own header, not under `/admin`'s
-  layout), `/programme` (public, no login, read-only conference programme —
-  shareable link, reuses `fetchScheduleBoard`), `/approved` (public, no
-  login — every approved session + speaker regardless of whether it's been
-  scheduled yet, reuses `fetchApprovedListing`), `/overview` (public, no
-  login — read-only copy of the admin overview dashboard, reuses
-  `fetchAllSubmissions`), `/submissions` (public, no login — read-only copy
-  of `/admin/submissions`, reuses `fetchAllSubmissions`).
+  organization-section field, shows the deadline/theme notice + poster
+  callout), `/proposals` (internal Dubai Municipality staff form — same
+  component, nav buttons to the five public pages below + poster callout,
+  has the organization-section field, no deadline notice; **not**
+  login-protected, see Known limitations), `/posters` (public poster
+  submission form, no login), `/posters/approved` (public, no login —
+  approved posters only, reuses `fetchApprovedPosters`), `/login`, `/admin`
+  (+ `/admin/submissions`, `/admin/setup` = categories/session types/org
+  sections/halls, `/admin/referees`; the overview page's stat-card row also
+  shows poster counts alongside submission counts), `/review` (admin +
+  referee shared queue — sessions/speakers and posters together, see
+  `ReviewQueue.tsx` above), `/schedule` (admin only, own header, not under
+  `/admin`'s layout), `/programme` (public, no login, read-only conference
+  programme — shareable link, reuses `fetchScheduleBoard`), `/approved`
+  (public, no login — every approved session + speaker regardless of
+  whether it's been scheduled yet, reuses `fetchApprovedListing`),
+  `/overview` (public, no login — read-only copy of the admin overview
+  dashboard, reuses `fetchAllSubmissions`), `/submissions` (public, no
+  login — read-only copy of `/admin/submissions`, reuses
+  `fetchAllSubmissions`).
 
 ## Conventions
 
@@ -171,17 +216,25 @@ Conventions below.
   (who submitted through which page), not an access-control boundary;
   anyone with the link can use either form. Don't assume `source ===
   "internal"` implies the submitter's identity was verified.
-- `/programme`, `/approved`, `/overview`, and `/submissions` are all fully
-  open public links (no login, no secret token) by the user's explicit
-  choice. `/programme` shows every scheduled session regardless of
-  speaker-confirmation status; `/approved` shows every approved
-  session/speaker regardless of whether it's been scheduled. `/overview` and
-  `/submissions` go further and expose **pending and rejected** submissions
-  too (the user chose this over an approved-only view, so submitters can
-  track their own submission's status) — submitter **name** is shown but
-  email/phone never are. If this needs tightening later (secret token in the
-  URL, hiding unconfirmed/pending/rejected items), that's a deliberate
+- `/programme`, `/approved`, `/overview`, `/submissions`, `/posters`, and
+  `/posters/approved` are all fully open public links (no login, no secret
+  token) by the user's explicit choice. `/programme` shows every scheduled
+  session regardless of speaker-confirmation status; `/approved` shows every
+  approved session/speaker regardless of whether it's been scheduled.
+  `/overview` and `/submissions` go further and expose **pending and
+  rejected** submissions too (the user chose this over an approved-only
+  view, so submitters can track their own submission's status) — submitter
+  **name** is shown but email/phone never are. `/posters/approved` is
+  approved-only (unlike `/overview`/`/submissions`, it doesn't show
+  pending/rejected posters). If this needs tightening later (secret token in
+  the URL, hiding unconfirmed/pending/rejected items), that's a deliberate
   reversal, not a bug fix.
+- Poster submissions are **not** surfaced on `/admin/submissions` (the
+  browsable/deletable list) or `/overview`/`/submissions` (the public
+  read-only copies) — only on `/review` (queue) and `/admin` (dashboard
+  counts). Deliberate scope decision when the feature was built; extend
+  those views too if posters need the same browse/delete/public-status
+  treatment as sessions and speakers.
 - Deleting a submission (admin-only, `/admin/submissions` → open an entry →
   "Delete this submission") requires typing the shared `DELETE_PASSCODE`
   env secret. There's no per-admin passcode — everyone with the passcode can
