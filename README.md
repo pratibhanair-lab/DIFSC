@@ -5,7 +5,7 @@ Food Safety Conference (Nov 16–18, 2026).
 
 This app collects session/speaker/poster suggestions from the public,
 lets an admin and referees review and approve them, and helps build the
-final conference programme. Submissions are open until **20 September
+final conference programme. Submissions are open until **30 September
 2026**.
 
 ## What's in this app

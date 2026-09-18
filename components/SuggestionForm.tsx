@@ -374,7 +374,7 @@ export default function SuggestionForm({
             style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, background: "var(--accent-weak)", border: "1px solid var(--accent)" }}
           >
             <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: 0, color: "var(--accent-ink)" }}>
-              Submissions are open until <strong>20 September 2026</strong>. Topics that align with this year&apos;s
+              Submissions are open until <strong>30 September 2026</strong>. Topics that align with this year&apos;s
               conference theme &mdash; <strong>Building Intelligent Food Systems: The future with AI</strong> &mdash;
               will be prioritized for selection.
             </p>

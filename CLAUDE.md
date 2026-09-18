@@ -20,7 +20,7 @@ There's also a separate, simpler **poster submission** track at `/posters`
 own `poster_submissions` table but is reviewed through the same `/review`
 queue — see the poster-specific entries under Where things live.
 
-Submissions (both tracks, and posters) are open until **20 September 2026**
+Submissions (both tracks, and posters) are open until **30 September 2026**
 — this is currently just a date shown in the UI, not enforced anywhere.
 
 ## Stack

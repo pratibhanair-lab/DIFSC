@@ -183,7 +183,7 @@ export default function PosterSubmissionForm({ categories }: { categories: Looku
           style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, background: "var(--accent-weak)", border: "1px solid var(--accent)" }}
         >
           <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: 0, color: "var(--accent-ink)" }}>
-            Submissions are open until <strong>20 September 2026</strong>.
+            Submissions are open until <strong>30 September 2026</strong>.
           </p>
         </div>
 
