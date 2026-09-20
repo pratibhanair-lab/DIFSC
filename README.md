@@ -14,13 +14,16 @@ final conference programme. Submissions are open until **30 September
 - **`/proposals`** — the same form for internal Dubai Municipality staff.
 - **`/posters`** — public form to submit a poster (presenter details +
   poster title/abstract/category).
+- **`/register`** — public free-registration form for delegates, strictly
+  for government employees (name, email, organization, designation, etc).
+  Not reviewed — every registration is accepted immediately.
 - **`/programme`**, **`/approved`**, **`/overview`**, **`/submissions`**,
   **`/posters/approved`** — public, read-only pages anyone with the link
   can view (no login needed) — the conference programme, approved
   items, and submission status.
 - **`/login`** then **`/admin`** — staff area (admin/referee login
   required): review queue, scheduling grid, category/hall setup,
-  submissions browser.
+  submissions browser, and a delegate list with CSV export.
 
 ## Running it locally
 

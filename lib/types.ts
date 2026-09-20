@@ -80,3 +80,17 @@ export type PosterSubmission = {
   review_comment: string | null;
   created_at: string;
 };
+
+export type DelegateRegistration = {
+  id: string;
+  reference: string;
+  full_name: string;
+  official_email: string;
+  preferred_email: string;
+  organization: string;
+  section_department: string | null;
+  designation: string;
+  mobile_number: string;
+  nationality: string;
+  created_at: string;
+};

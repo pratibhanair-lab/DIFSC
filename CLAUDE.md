@@ -23,6 +23,15 @@ queue — see the poster-specific entries under Where things live.
 Submissions (both tracks, and posters) are open until **30 September 2026**
 — this is currently just a date shown in the UI, not enforced anywhere.
 
+There's also a **delegate registration** track at `/register` — a free
+registration form for delegates who are already known to be eligible (the
+link is shared directly with them). Unlike every other track, this one is
+**not reviewed/approved** — every registration is final the moment it's
+submitted; eligibility ("government employees only") is enforced by wording
+on the form, not an admin decision. It collects contact/affiliation details
+into its own `delegate_registrations` table with no status column at all —
+see the delegate-specific entries under Where things live.
+
 ## Stack
 
 - Next.js 16 (App Router, Turbopack). **Note:** `middleware.ts` is now
@@ -53,8 +62,14 @@ Submissions (both tracks, and posters) are open until **30 September 2026**
   intro section above. `0005_poster_submissions.sql` (applied) adds the
   standalone `poster_submissions` table (its own `reference` sequence,
   `DFSC-P-2026-XXX`) — see the poster-specific entries below.
+  `0006_delegate_registrations.sql` adds the standalone
+  `delegate_registrations` table (its own `reference` sequence,
+  `DFSC-D-2026-XXX`) — no status/review columns, since this track isn't
+  reviewed (see the intro section above) — see the delegate-specific
+  entries below.
 - `lib/types.ts` — shared TS types mirroring the schema, including
-  `PosterStatus` / `PosterSubmission`.
+  `PosterStatus` / `PosterSubmission` and `DelegateRegistration` (no status
+  type — delegates have no review state).
 - `lib/supabase/server.ts` — auth-only client (cookie-bound, anon key). Only
   used for login/logout/`getUser()`.
 - `lib/supabase/admin.ts` — secret-key client. **All** table reads/writes go
@@ -65,7 +80,11 @@ Submissions (both tracks, and posters) are open until **30 September 2026**
   feature area: `submissions`, `auth`, `referees`, `lookups`, `review`,
   `schedule`, `posters` (`submitPoster`, `decidePoster` — the poster
   equivalent of `submissions.ts` + `review.ts`, but simpler since a poster is
-  one row with no session/speaker nesting).
+  one row with no session/speaker nesting), `delegates`
+  (`submitDelegateRegistration`, `exportDelegatesCsv` — no `decideDelegate`,
+  since this track has no review step; `exportDelegatesCsv` builds the CSV
+  used only by `/admin/delegates`; no confirmation email is sent either —
+  deliberate, see Known limitations).
 - `lib/submissions-view.ts` / `lib/schedule-view.ts` / `lib/approved-view.ts`
   / `lib/posters-view.ts` — read-model helpers that join raw tables into the
   shapes the UI needs. Reuse these instead of re-querying tables directly. A
@@ -77,7 +96,10 @@ Submissions (both tracks, and posters) are open until **30 September 2026**
   `fetchPosterSubmissions()` (all posters, admin-only, includes
   email/phone/review fields — used by `/review` and `/admin`) and
   `fetchApprovedPosters()` (approved-only, no contact info — used by the
-  public `/posters/approved`).
+  public `/posters/approved`). `lib/delegates-view.ts` exports
+  `fetchDelegateRegistrations()` (all delegates, admin-only, includes every
+  field including email/mobile — used only by `/admin/delegates`, since
+  there's no review queue entry or public listing for this track).
 - `components/SessionReviewCard.tsx` — self-contained per-session
   approve/revise/reject card (mirrors `SpeakerCard.tsx`'s pattern), reused by
   both `ReviewQueue.tsx` and `SubmissionDetailModal.tsx` since a submission
@@ -93,7 +115,8 @@ Submissions (both tracks, and posters) are open until **30 September 2026**
   { type: "submission" | "poster" }`) so admins/referees review both
   sessions/speakers and posters from a single queue. `TypeBadge` gets a
   `"poster"` kind for this; `SourceBadge` is skipped for poster items since
-  posters have no `source`/org-section concept.
+  posters have no `source`/org-section concept. Delegates are **not** in
+  this queue at all — see the intro section above.
 - `components/SourceBadge.tsx` — small chip showing "External" or "Internal
   (DM staff)" based on `SubmissionView.source` / `Submission.source`.
   Admin-only: used in `ReviewQueue.tsx`, `SubmissionsBrowser.tsx`,
@@ -143,6 +166,29 @@ Submissions (both tracks, and posters) are open until **30 September 2026**
   kept separate on purpose since a poster has no session/speaker nesting and
   reusing the bigger form would have meant threading a lot of conditional
   logic through it for one field set.
+- `components/DelegateRegistrationForm.tsx` — the standalone delegate
+  registration form (`/register`): full name*, official email*, preferred
+  email (defaults to official email, editable — the "same as official"
+  behavior is a plain `preferredEmailTouched` flag, not a checkbox),
+  organization* (a fixed `<select>` of government entities, alphabetical,
+  "Other" last, hardcoded as `ORGANIZATION_OPTIONS` in the component — not
+  an admin-editable lookup table like `categories`/`org_sections`; picking
+  "Other" reveals a free-text field whose value becomes the submitted
+  organization), section/department, designation*, mobile number*,
+  nationality*. Shows a fixed "exclusively for government employees" notice
+  near the top of the page, and on successful submit shows a fixed
+  confirmation message (badge-by-email-and-mobile timeline + the same
+  government-employees-only wording) instead of a generic "thanks" —
+  don't reword either without being asked, they're policy text, not
+  copywriting. Not a `SuggestionForm` or `PosterSubmissionForm` variant —
+  kept separate for the same reason posters are: a completely different
+  field set with no session/speaker/poster nesting, and no review step.
+- `components/DelegatesBrowser.tsx` — admin-only table/list at
+  `/admin/delegates` of every delegate registration, with a search box and
+  a "Download CSV" button (`exportDelegatesCsv` in
+  `lib/actions/delegates.ts`) that builds the CSV server-side and triggers
+  a client-side blob download. Read-only — there's nothing to
+  approve/reject since this track isn't reviewed.
 - Routes: `/` (public external-submitter form — no nav buttons, no
   organization-section field, shows the deadline/theme notice + poster
   callout), `/proposals` (internal Dubai Municipality staff form — same
@@ -150,12 +196,17 @@ Submissions (both tracks, and posters) are open until **30 September 2026**
   has the organization-section field, no deadline notice; **not**
   login-protected, see Known limitations), `/posters` (public poster
   submission form, no login), `/posters/approved` (public, no login —
-  approved posters only, reuses `fetchApprovedPosters`), `/login`, `/admin`
-  (+ `/admin/submissions`, `/admin/setup` = categories/session types/org
-  sections/halls, `/admin/referees`; the overview page's stat-card row also
-  shows poster counts alongside submission counts), `/review` (admin +
-  referee shared queue — sessions/speakers and posters together, see
-  `ReviewQueue.tsx` above), `/schedule` (admin only, own header, not under
+  approved posters only, reuses `fetchApprovedPosters`), `/register`
+  (public delegate registration form, no login, not reviewed — see
+  `DelegateRegistrationForm.tsx` above; there is no public "approved
+  delegates" listing), `/login`, `/admin` (+ `/admin/submissions`,
+  `/admin/delegates` = the read-only delegate list + CSV export,
+  `/admin/setup` = categories/session types/org sections/halls,
+  `/admin/referees`; the overview page's stat-card row also shows poster
+  counts alongside submission counts, plus a single delegate-count card
+  linking to `/admin/delegates`), `/review` (admin + referee shared queue —
+  sessions/speakers and posters together, see `ReviewQueue.tsx` above;
+  delegates are not in this queue), `/schedule` (admin only, own header, not under
   `/admin`'s layout), `/programme` (public, no login, read-only conference
   programme — shareable link, reuses `fetchScheduleBoard`), `/approved`
   (public, no login — every approved session + speaker regardless of
@@ -235,6 +286,18 @@ Submissions (both tracks, and posters) are open until **30 September 2026**
   counts). Deliberate scope decision when the feature was built; extend
   those views too if posters need the same browse/delete/public-status
   treatment as sessions and speakers.
+- Delegate registrations (`/register`) are **not reviewed at all** —
+  no pending/approved/rejected status, no entry in `/review`, no
+  `decideDelegate` action. Every registration is accepted as submitted; the
+  "government employees only" eligibility rule is enforced by wording on
+  the form and the confirmation message, not by an admin gate. This also
+  means **no email is sent** — no submit confirmation and no decision
+  email — unlike sessions/speakers/posters, which do send decision emails
+  via Resend. Both were deliberate choices when the feature was built. If
+  a review step or confirmation email is wanted later, that's a real
+  schema change (adding status/review columns back to
+  `delegate_registrations`), not just a UI tweak — see
+  `0006_delegate_registrations.sql`.
 - Deleting a submission (admin-only, `/admin/submissions` → open an entry →
   "Delete this submission") requires typing the shared `DELETE_PASSCODE`
   env secret. There's no per-admin passcode — everyone with the passcode can
