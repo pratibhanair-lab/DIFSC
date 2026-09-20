@@ -198,13 +198,9 @@ export default function DelegateRegistrationForm() {
         <div className="mono" style={{ fontSize: 12, color: "var(--accent)", letterSpacing: ".08em", fontWeight: 500 }}>
           DELEGATE REGISTRATION
         </div>
-        <h1 className="heading" style={{ fontWeight: 800, fontSize: 34, lineHeight: 1.12, margin: "10px 0 8px", letterSpacing: "-.01em" }}>
-          Register as a delegate
+        <h1 className="heading" style={{ fontWeight: 800, fontSize: 34, lineHeight: 1.12, margin: "10px 0 24px", letterSpacing: "-.01em" }}>
+          Government Delegate Registration
         </h1>
-        <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.6, margin: "0 0 24px", maxWidth: 560 }}>
-          This page is for delegates eligible for free registration to the conference. Please fill in your
-          details below.
-        </p>
 
         <div
           className="card"
