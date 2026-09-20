@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { submitDelegateRegistration } from "@/lib/actions/delegates";
 
@@ -31,6 +32,9 @@ const ORGANIZATION_OPTIONS = [
 ];
 
 export default function DelegateRegistrationForm() {
+  const searchParams = useSearchParams();
+  const embed = searchParams.get("embed") === "1";
+
   const [phase, setPhase] = useState<"form" | "confirm">("form");
   const [confirmRef, setConfirmRef] = useState("");
 
@@ -145,56 +149,60 @@ export default function DelegateRegistrationForm() {
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      <div style={{ height: 6, background: "var(--accent)" }} />
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 32px",
-          borderBottom: "1px solid var(--line)",
-          background: "var(--surface)",
-          position: "sticky",
-          top: 0,
-          zIndex: 5,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div
-            className="heading"
+      {!embed && (
+        <>
+          <div style={{ height: 6, background: "var(--accent)" }} />
+          <header
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 9,
-              background: "var(--accent)",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              color: "#fff",
-              fontWeight: 800,
-              fontSize: 16,
+              justifyContent: "space-between",
+              padding: "16px 32px",
+              borderBottom: "1px solid var(--line)",
+              background: "var(--surface)",
+              position: "sticky",
+              top: 0,
+              zIndex: 5,
             }}
           >
-            DF
-          </div>
-          <div>
-            <div className="heading" style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.1 }}>
-              DIFSC 2026
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                className="heading"
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 9,
+                  background: "var(--accent)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontWeight: 800,
+                  fontSize: 16,
+                }}
+              >
+                DF
+              </div>
+              <div>
+                <div className="heading" style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.1 }}>
+                  DIFSC 2026
+                </div>
+                <div className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: ".03em" }}>
+                  20TH EDITION &middot; NOV 16&ndash;18, 2026
+                </div>
+              </div>
             </div>
-            <div className="mono" style={{ fontSize: 11, color: "var(--muted)", letterSpacing: ".03em" }}>
-              20TH EDITION &middot; NOV 16&ndash;18, 2026
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <ThemeToggle />
+              <Link href="/login" style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>
+                Staff login &rarr;
+              </Link>
             </div>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <ThemeToggle />
-          <Link href="/login" style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>
-            Staff login &rarr;
-          </Link>
-        </div>
-      </header>
+          </header>
+        </>
+      )}
 
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "44px 24px 80px" }}>
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: embed ? "24px 24px 60px" : "44px 24px 80px" }}>
         <div className="mono" style={{ fontSize: 12, color: "var(--accent)", letterSpacing: ".08em", fontWeight: 500 }}>
           DELEGATE REGISTRATION
         </div>
