@@ -208,19 +208,10 @@ export default function DelegateRegistrationForm() {
 
         <div
           className="card"
-          style={{ padding: "16px 20px", marginBottom: 16, maxWidth: 560, background: "var(--pend-bg)", border: "1px solid var(--pend)" }}
+          style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, background: "var(--pend-bg)", border: "1px solid var(--pend)" }}
         >
           <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: 0, color: "var(--pend)", fontWeight: 600 }}>
             This registration is exclusively for government employees.
-          </p>
-        </div>
-
-        <div
-          className="card"
-          style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, background: "var(--accent-weak)", border: "1px solid var(--accent)" }}
-        >
-          <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: 0, color: "var(--accent-ink)" }}>
-            Registrations are open until <strong>30 September 2026</strong>.
           </p>
         </div>
 
