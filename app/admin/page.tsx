@@ -89,8 +89,13 @@ export default async function AdminOverviewPage() {
         ))}
       </div>
 
-      <div className="heading" style={{ fontWeight: 700, fontSize: 15, marginBottom: 14 }}>
-        Posters
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <div className="heading" style={{ fontWeight: 700, fontSize: 15 }}>
+          Posters
+        </div>
+        <Link href="/admin/posters" style={{ fontSize: 13, fontWeight: 600 }}>
+          View list &rarr;
+        </Link>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 32 }}>
         {posterCountCards.map((c) => (

@@ -8,6 +8,7 @@ import { logout } from "@/lib/actions/auth";
 const TABS = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/submissions", label: "Submissions" },
+  { href: "/admin/posters", label: "Posters" },
   { href: "/admin/delegates", label: "Delegates" },
   { href: "/review", label: "Review queue" },
   { href: "/admin/setup", label: "Setup" },

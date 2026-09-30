@@ -28,6 +28,8 @@ export type SubmitPosterResult =
 async function revalidatePosterViews() {
   revalidatePath("/review");
   revalidatePath("/posters/approved");
+  revalidatePath("/admin/posters");
+  revalidatePath("/admin");
 }
 
 export async function submitPoster(payload: SubmitPosterInput): Promise<SubmitPosterResult> {

@@ -96,7 +96,9 @@ see the delegate-specific entries under Where things live.
   `fetchPosterSubmissions()` (all posters, admin-only, includes
   email/phone/review fields — used by `/review` and `/admin`) and
   `fetchApprovedPosters()` (approved-only, no contact info — used by the
-  public `/posters/approved`). `lib/delegates-view.ts` exports
+  public `/posters/approved`). `fetchPosterSubmissions()` is also used by
+  `/admin/posters` (see `PostersBrowser.tsx` below). `lib/delegates-view.ts`
+  exports
   `fetchDelegateRegistrations()` (all delegates, admin-only, includes every
   field including email/mobile — used only by `/admin/delegates`, since
   there's no review queue entry or public listing for this track).
@@ -189,6 +191,15 @@ see the delegate-specific entries under Where things live.
   `lib/actions/delegates.ts`) that builds the CSV server-side and triggers
   a client-side blob download. Read-only — there's nothing to
   approve/reject since this track isn't reviewed.
+- `components/PostersBrowser.tsx` — admin-only table/list at
+  `/admin/posters` of every poster submission, any status (unlike
+  `/review`, which only shows pending ones). Has a search box and a status
+  filter; clicking a row expands it in place to show the same
+  `PosterReviewCard` used in `/review` (approve/reject + optional comment)
+  plus the presenter's contact info, so an admin can re-decide a poster
+  after the fact (e.g. undo a rejection) — not just work the initial queue.
+  No CSV export (unlike `DelegatesBrowser`) — add one following that
+  pattern if it's wanted later.
 - Routes: `/` (public external-submitter form — no nav buttons, no
   organization-section field, shows the deadline/theme notice + poster
   callout), `/proposals` (internal Dubai Municipality staff form — same
@@ -201,7 +212,9 @@ see the delegate-specific entries under Where things live.
   `DelegateRegistrationForm.tsx` above; there is no public "approved
   delegates" listing), `/login`, `/admin` (+ `/admin/submissions`,
   `/admin/delegates` = the read-only delegate list + CSV export,
-  `/admin/setup` = categories/session types/org sections/halls,
+  `/admin/posters` = the browsable poster list with approve/reject (see
+  `PostersBrowser.tsx` above), `/admin/setup` = categories/session
+  types/org sections/halls,
   `/admin/referees`; the overview page's stat-card row also shows poster
   counts alongside submission counts, plus a single delegate-count card
   linking to `/admin/delegates`), `/review` (admin + referee shared queue —
@@ -280,12 +293,15 @@ see the delegate-specific entries under Where things live.
   pending/rejected posters). If this needs tightening later (secret token in
   the URL, hiding unconfirmed/pending/rejected items), that's a deliberate
   reversal, not a bug fix.
-- Poster submissions are **not** surfaced on `/admin/submissions` (the
-  browsable/deletable list) or `/overview`/`/submissions` (the public
-  read-only copies) — only on `/review` (queue) and `/admin` (dashboard
-  counts). Deliberate scope decision when the feature was built; extend
-  those views too if posters need the same browse/delete/public-status
-  treatment as sessions and speakers.
+- Poster submissions have their own browsable admin list at
+  `/admin/posters` (`PostersBrowser.tsx`, added after the feature's initial
+  build) plus `/review` (pending-only queue) and `/admin` (dashboard
+  counts). They are still **not** surfaced on `/admin/submissions` (the
+  session/speaker browsable/deletable list — posters have no delete
+  action anywhere) or on `/overview`/`/submissions` (the public read-only
+  copies of that list). Deliberate scope decision; extend those views too
+  if posters need the same public-status or delete treatment as sessions
+  and speakers.
 - Delegate registrations (`/register`) are **not reviewed at all** —
   no pending/approved/rejected status, no entry in `/review`, no
   `decideDelegate` action. Every registration is accepted as submitted; the
