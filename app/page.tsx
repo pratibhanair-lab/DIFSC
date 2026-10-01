@@ -2,6 +2,9 @@ import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import SuggestionForm, { type InitialSubmitter } from "@/components/SuggestionForm";
 
+import SubmissionsClosed from "@/components/SubmissionsClosed";
+import { SESSION_SUBMISSIONS_OPEN } from "@/lib/submission-config";
+
 export const dynamic = "force-dynamic";
 
 function readInitialSubmitter(raw: string | undefined): InitialSubmitter | null {
@@ -21,6 +24,8 @@ function readInitialSubmitter(raw: string | undefined): InitialSubmitter | null 
 }
 
 export default async function HomePage() {
+  if (!SESSION_SUBMISSIONS_OPEN) return <SubmissionsClosed />;
+
   const admin = createAdminClient();
   const [{ data: categories }, { data: sessionTypes }, { data: orgSections }, cookieStore] = await Promise.all([
     admin.from("categories").select("id,name").order("name"),

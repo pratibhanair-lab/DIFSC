@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import { submitPoster } from "@/lib/actions/posters";
+import { POSTER_DEADLINE_LABEL } from "@/lib/submission-config";
 
 type Lookup = { id: string; name: string };
 
@@ -183,13 +184,13 @@ export default function PosterSubmissionForm({ categories }: { categories: Looku
           style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, background: "var(--accent-weak)", border: "1px solid var(--accent)" }}
         >
           <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: 0, color: "var(--accent-ink)" }}>
-            Submissions are open until <strong>30 September 2026</strong>.
+            Submissions are open until <strong>{POSTER_DEADLINE_LABEL}</strong>.
           </p>
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "0 0 32px" }}>
           <Link href="/" className="btn btn-outline" style={{ fontSize: 13 }}>
-            Suggest a session or speaker instead
+            Home
           </Link>
           <Link href="/posters/approved" className="btn btn-outline" style={{ fontSize: 13 }}>
             View approved posters

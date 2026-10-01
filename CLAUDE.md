@@ -20,8 +20,13 @@ There's also a separate, simpler **poster submission** track at `/posters`
 own `poster_submissions` table but is reviewed through the same `/review`
 queue — see the poster-specific entries under Where things live.
 
-Submissions (both tracks, and posters) are open until **30 September 2026**
-— this is currently just a date shown in the UI, not enforced anywhere.
+**Speaker/session submissions are CLOSED** (both `/` and `/proposals`) and
+enforced in code, controlled by one switch in `lib/submission-config.ts`
+(`SESSION_SUBMISSIONS_OPEN`, currently `false`; set it to `true` to reopen —
+the original `SuggestionForm` is untouched). **Poster submissions stay open
+until 10 October 2026** (end of day, Dubai time, UTC+4), also defined in
+`lib/submission-config.ts` (`postersOpen()`, `POSTER_DEADLINE_LABEL`); after
+that date `/posters` shows the closed page and `submitPoster` rejects.
 
 There's also a **delegate registration** track at `/register` — a free
 registration form for delegates who are already known to be eligible (the
@@ -67,6 +72,16 @@ see the delegate-specific entries under Where things live.
   `DFSC-D-2026-XXX`) — no status/review columns, since this track isn't
   reviewed (see the intro section above) — see the delegate-specific
   entries below.
+- `lib/submission-config.ts` — the one place that says which tracks are
+  open: `SESSION_SUBMISSIONS_OPEN`, `postersOpen()`, `POSTER_DEADLINE_LABEL`,
+  and the "closed" messages. Not a `"use server"` file, so constants can be
+  exported from it. `submitSuggestion` and `submitPoster` check it
+  server-side, so old links/open tabs can't sneak a submission through.
+- `components/SubmissionsClosed.tsx` — the "speaker & session submissions
+  are closed" page shown by `/` and `/proposals` (and by `/posters` after
+  its deadline). While posters are open it shows a "Submit a poster" button
+  and the poster deadline; afterwards it says posters are closed too.
+  `/proposals` passes `showNavTabs` to keep its public-page buttons.
 - `lib/types.ts` — shared TS types mirroring the schema, including
   `PosterStatus` / `PosterSubmission` and `DelegateRegistration` (no status
   type — delegates have no review state).
@@ -200,12 +215,13 @@ see the delegate-specific entries under Where things live.
   after the fact (e.g. undo a rejection) — not just work the initial queue.
   No CSV export (unlike `DelegatesBrowser`) — add one following that
   pattern if it's wanted later.
-- Routes: `/` (public external-submitter form — no nav buttons, no
-  organization-section field, shows the deadline/theme notice + poster
-  callout), `/proposals` (internal Dubai Municipality staff form — same
-  component, nav buttons to the five public pages below + poster callout,
-  has the organization-section field, no deadline notice; **not**
-  login-protected, see Known limitations), `/posters` (public poster
+- Routes: `/` (currently shows `SubmissionsClosed` — normally the public
+  external-submitter form: no nav buttons, no organization-section field,
+  deadline/theme notice + poster callout), `/proposals` (currently
+  `SubmissionsClosed` with nav buttons — normally the internal Dubai
+  Municipality staff form: same component, nav buttons to the five public
+  pages below + poster callout, organization-section field, no deadline
+  notice; **not** login-protected, see Known limitations), `/posters` (public poster
   submission form, no login), `/posters/approved` (public, no login —
   approved posters only, reuses `fetchApprovedPosters`), `/register`
   (public delegate registration form, no login, not reviewed — see
@@ -262,6 +278,10 @@ see the delegate-specific entries under Where things live.
 
 ## Known limitations / deliberate scope decisions
 
+- Session/speaker submissions closed after the 30 September 2026 deadline;
+  posters extended to 10 October 2026. The deadline notice text inside
+  `SuggestionForm.tsx` still says "30 September 2026" — it's hidden while
+  the form is closed, so update it if the form is ever reopened.
 - Resend is in **sandbox mode** — confirmation/decision emails only deliver
   to the Resend account owner's own address until a domain is verified
   (Resend dashboard → Domains) and `RESEND_FROM_EMAIL` is updated in

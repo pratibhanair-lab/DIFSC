@@ -5,6 +5,8 @@ import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendPosterConfirmation, sendPosterDecisionEmail } from "@/lib/email";
 
+import { postersOpen, POSTERS_CLOSED_MESSAGE } from "@/lib/submission-config";
+
 const ABSTRACT_WORD_LIMIT = 300;
 
 function wordCount(text: string): number {
@@ -33,6 +35,8 @@ async function revalidatePosterViews() {
 }
 
 export async function submitPoster(payload: SubmitPosterInput): Promise<SubmitPosterResult> {
+  if (!postersOpen()) return { ok: false, error: POSTERS_CLOSED_MESSAGE };
+
   const presenterName = payload.presenterName.trim();
   const email = payload.email.trim();
   const title = payload.title.trim();

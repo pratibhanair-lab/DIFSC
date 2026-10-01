@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendSubmissionConfirmation } from "@/lib/email";
+import { SESSION_SUBMISSIONS_OPEN, SESSIONS_CLOSED_MESSAGE } from "@/lib/submission-config";
 import type { SpeakerLocation, SubmissionSource } from "@/lib/types";
 
 export type SubmitSpeakerInput = {
@@ -62,6 +63,8 @@ function speakerRow(sp: SubmitSpeakerInput, submissionId: string, sessionId: str
 }
 
 export async function submitSuggestion(payload: SubmitPayload): Promise<SubmitResult> {
+  if (!SESSION_SUBMISSIONS_OPEN) return { ok: false, error: SESSIONS_CLOSED_MESSAGE };
+
   const name = payload.subName.trim();
   const email = payload.subEmail.trim();
   if (!name || !email) return { ok: false, error: "Please enter your full name and email." };
