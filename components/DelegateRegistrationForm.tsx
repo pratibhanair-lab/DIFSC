@@ -38,6 +38,8 @@ export default function DelegateRegistrationForm() {
   const [phase, setPhase] = useState<"form" | "confirm">("form");
   const [confirmRef, setConfirmRef] = useState("");
 
+  const [registrationType, setRegistrationType] = useState<"government" | "guest">("government");
+  const [guestCode, setGuestCode] = useState("");
   const [fullName, setFullName] = useState("");
   const [officialEmail, setOfficialEmail] = useState("");
   const [preferredEmail, setPreferredEmail] = useState("");
@@ -67,6 +69,8 @@ export default function DelegateRegistrationForm() {
     const organization = organizationChoice === "Other" ? organizationOther.trim() : organizationChoice;
     setSubmitting(true);
     const result = await submitDelegateRegistration({
+      registrationType,
+      guestCode,
       fullName,
       officialEmail,
       preferredEmail,
@@ -87,6 +91,8 @@ export default function DelegateRegistrationForm() {
   }
 
   function resetForm() {
+    setRegistrationType("government");
+    setGuestCode("");
     setFullName("");
     setOfficialEmail("");
     setPreferredEmail("");
@@ -127,7 +133,8 @@ export default function DelegateRegistrationForm() {
           <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.6, margin: "0 0 24px" }}>
             Thank you for registering for DIFSC2026. Your digital registration badge will be sent to your email
             and mobile 3 days before the event. Please note that this registration is strictly for government
-            employees. If you are not a government employee, your registration will not be validated.
+            employees and guests. If you are neither a government employee nor a guest, your registration will not be
+            validated.
           </p>
           <div className="card" style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "12px 18px", marginBottom: 32 }}>
             <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
@@ -207,7 +214,7 @@ export default function DelegateRegistrationForm() {
           DELEGATE REGISTRATION
         </div>
         <h1 className="heading" style={{ fontWeight: 800, fontSize: 34, lineHeight: 1.12, margin: "10px 0 24px", letterSpacing: "-.01em" }}>
-          Government Delegate Registration
+          Delegate Registration
         </h1>
 
         <div
@@ -215,7 +222,7 @@ export default function DelegateRegistrationForm() {
           style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, background: "var(--pend-bg)", border: "1px solid var(--pend)" }}
         >
           <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: 0, color: "var(--pend)", fontWeight: 600 }}>
-            This registration is exclusively for government employees.
+            This registration is exclusively for government employees and guests.
           </p>
         </div>
 
@@ -227,7 +234,30 @@ export default function DelegateRegistrationForm() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <label style={{ display: "block" }}>
               <span style={labelStyle()}>
-                Full name <span style={{ color: "var(--rej)" }}>*</span>
+                I am registering as <span style={{ color: "var(--rej)" }}>*</span>
+              </span>
+              <select
+                className="input"
+                value={registrationType}
+                onChange={(e) => setRegistrationType(e.target.value === "guest" ? "guest" : "government")}
+              >
+                <option value="government">Government employee</option>
+                <option value="guest">Guest</option>
+              </select>
+            </label>
+            {registrationType === "guest" ? (
+              <label style={{ display: "block" }}>
+                <span style={labelStyle()}>
+                  Guest joining code <span style={{ color: "var(--rej)" }}>*</span>
+                </span>
+                <input className="input" value={guestCode} onChange={(e) => setGuestCode(e.target.value)} placeholder="Enter your joining code" />
+              </label>
+            ) : (
+              <div />
+            )}
+            <label style={{ display: "block" }}>
+              <span style={labelStyle()}>
+                Full name<span style={{ color: "var(--rej)" }}>*</span>
               </span>
               <input className="input" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" />
             </label>

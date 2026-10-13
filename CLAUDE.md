@@ -29,11 +29,13 @@ until 10 October 2026** (end of day, Dubai time, UTC+4), also defined in
 that date `/posters` shows the closed page and `submitPoster` rejects.
 
 There's also a **delegate registration** track at `/register` — a free
-registration form for delegates who are already known to be eligible (the
-link is shared directly with them). Unlike every other track, this one is
-**not reviewed/approved** — every registration is final the moment it's
-submitted; eligibility ("government employees only") is enforced by wording
-on the form, not an admin decision. It collects contact/affiliation details
+registration form for government employees and guests (the link is shared
+directly with them). Delegates pick a registration type on the form;
+**guests must enter a joining code** (`difsc@20`, checked server-side only).
+Unlike every other track, this one is **not reviewed/approved** — every
+registration is final the moment it's submitted; eligibility is enforced by
+the type choice, the guest code and the wording on the form, not an admin
+decision. It collects contact/affiliation details
 into its own `delegate_registrations` table with no status column at all —
 see the delegate-specific entries under Where things live.
 
@@ -71,7 +73,9 @@ see the delegate-specific entries under Where things live.
   `delegate_registrations` table (its own `reference` sequence,
   `DFSC-D-2026-XXX`) — no status/review columns, since this track isn't
   reviewed (see the intro section above) — see the delegate-specific
-  entries below.
+  entries below. `0007_delegate_registration_type.sql` (applied) adds
+  `delegate_registrations.registration_type` (`'government' | 'guest'`, not
+  null, default `'government'`, so older rows count as government).
 - `lib/submission-config.ts` — the one place that says which tracks are
   open: `SESSION_SUBMISSIONS_OPEN`, `postersOpen()`, `POSTER_DEADLINE_LABEL`,
   and the "closed" messages. Not a `"use server"` file, so constants can be
@@ -96,7 +100,9 @@ see the delegate-specific entries under Where things live.
   `schedule`, `posters` (`submitPoster`, `decidePoster` — the poster
   equivalent of `submissions.ts` + `review.ts`, but simpler since a poster is
   one row with no session/speaker nesting), `delegates`
-  (`submitDelegateRegistration`, `exportDelegatesCsv` — no `decideDelegate`,
+  (`submitDelegateRegistration` — also checks the guest joining code via a
+  private `GUEST_JOINING_CODE` constant in that file, never exported or sent
+  to the browser — and `exportDelegatesCsv`; no `decideDelegate`,
   since this track has no review step; `exportDelegatesCsv` builds the CSV
   used only by `/admin/delegates`; no confirmation email is sent either —
   deliberate, see Known limitations).
@@ -184,7 +190,9 @@ see the delegate-specific entries under Where things live.
   reusing the bigger form would have meant threading a lot of conditional
   logic through it for one field set.
 - `components/DelegateRegistrationForm.tsx` — the standalone delegate
-  registration form (`/register`): full name*, official email*, preferred
+  registration form (`/register`): "I am registering as"* (Government
+  employee, the default, or Guest — picking Guest reveals a required "Guest
+  joining code" field), full name*, official email*, preferred
   email (defaults to official email, editable — the "same as official"
   behavior is a plain `preferredEmailTouched` flag, not a checkbox),
   organization* (a fixed `<select>` of government entities, alphabetical,
@@ -192,17 +200,18 @@ see the delegate-specific entries under Where things live.
   an admin-editable lookup table like `categories`/`org_sections`; picking
   "Other" reveals a free-text field whose value becomes the submitted
   organization), section/department, designation*, mobile number*,
-  nationality*. Shows a fixed "exclusively for government employees" notice
-  near the top of the page, and on successful submit shows a fixed
+  nationality*. Shows a fixed "exclusively for government employees and guests"
+  notice near the top of the page, and on successful submit shows a fixed
   confirmation message (badge-by-email-and-mobile timeline + the same
-  government-employees-only wording) instead of a generic "thanks" —
+  government-employees-and-guests wording) instead of a generic "thanks" —
   don't reword either without being asked, they're policy text, not
   copywriting. Not a `SuggestionForm` or `PosterSubmissionForm` variant —
   kept separate for the same reason posters are: a completely different
   field set with no session/speaker/poster nesting, and no review step.
 - `components/DelegatesBrowser.tsx` — admin-only table/list at
-  `/admin/delegates` of every delegate registration, with a search box and
-  a "Download CSV" button (`exportDelegatesCsv` in
+  `/admin/delegates` of every delegate registration, with a search box, a
+  type filter (all / government employees / guests), a type badge per row,
+  and a "Download CSV" button (includes a Type column) (`exportDelegatesCsv` in
   `lib/actions/delegates.ts`) that builds the CSV server-side and triggers
   a client-side blob download. Read-only — there's nothing to
   approve/reject since this track isn't reviewed.
@@ -325,8 +334,11 @@ see the delegate-specific entries under Where things live.
 - Delegate registrations (`/register`) are **not reviewed at all** —
   no pending/approved/rejected status, no entry in `/review`, no
   `decideDelegate` action. Every registration is accepted as submitted; the
-  "government employees only" eligibility rule is enforced by wording on
-  the form and the confirmation message, not by an admin gate. This also
+  eligibility rule is enforced by the registration-type choice, the guest
+  joining code, and wording on the form and the confirmation message, not by
+  an admin gate. The guest code is a single shared code (not per-guest), so
+  anyone who learns it can register as a guest; change it in
+  `lib/actions/delegates.ts` if it leaks. This also
   means **no email is sent** — no submit confirmation and no decision
   email — unlike sessions/speakers/posters, which do send decision emails
   via Resend. Both were deliberate choices when the feature was built. If

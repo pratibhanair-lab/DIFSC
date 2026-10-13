@@ -4,7 +4,7 @@ import DelegateRegistrationForm from "@/components/DelegateRegistrationForm";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Government Registration",
+  title: "Delegate Registration",
 };
 
 export default function RegisterPage() {

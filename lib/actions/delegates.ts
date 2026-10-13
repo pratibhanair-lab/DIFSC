@@ -5,7 +5,12 @@ import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchDelegateRegistrations } from "@/lib/delegates-view";
 
+// Checked here, on the server only, so the code never ships to the browser.
+const GUEST_JOINING_CODE = "difsc@20";
+
 export type SubmitDelegateInput = {
+  registrationType: "government" | "guest";
+  guestCode: string;
   fullName: string;
   officialEmail: string;
   preferredEmail: string;
@@ -29,6 +34,14 @@ export async function submitDelegateRegistration(payload: SubmitDelegateInput): 
   const mobileNumber = payload.mobileNumber.trim();
   const nationality = payload.nationality.trim();
 
+  if (payload.registrationType === "guest") {
+    const code = (payload.guestCode ?? "").trim();
+    if (!code) return { ok: false, error: "Please enter your guest joining code." };
+    if (code !== GUEST_JOINING_CODE) {
+      return { ok: false, error: "That guest joining code isn't correct. Please check it and try again." };
+    }
+  }
+
   if (!fullName) return { ok: false, error: "Please enter your full name." };
   if (!officialEmail) return { ok: false, error: "Please enter your official email." };
   if (!organization) return { ok: false, error: "Please select or enter your organization." };
@@ -45,6 +58,7 @@ export async function submitDelegateRegistration(payload: SubmitDelegateInput): 
 
   const { error: insertError } = await admin.from("delegate_registrations").insert({
     reference,
+    registration_type: payload.registrationType === "guest" ? "guest" : "government",
     full_name: fullName,
     official_email: officialEmail,
     preferred_email: preferredEmail,
@@ -78,6 +92,7 @@ export async function exportDelegatesCsv(): Promise<string> {
 
   const header = [
     "Reference",
+    "Type",
     "Full name",
     "Official email",
     "Preferred email",
@@ -92,6 +107,7 @@ export async function exportDelegatesCsv(): Promise<string> {
   const rows = delegates.map((d) =>
     [
       d.reference,
+      d.registrationType === "guest" ? "Guest" : "Government employee",
       d.fullName,
       d.officialEmail,
       d.preferredEmail,
