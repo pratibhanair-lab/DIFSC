@@ -4,13 +4,15 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchDelegateRegistrations } from "@/lib/delegates-view";
+import { VOLUNTEER_SUPPORT_OPTIONS } from "@/lib/delegate-config";
 
 // Checked here, on the server only, so the code never ships to the browser.
 const GUEST_JOINING_CODE = "difsc@20";
 
 export type SubmitDelegateInput = {
-  registrationType: "government" | "guest";
+  registrationType: "government" | "guest" | "volunteer";
   guestCode: string;
+  volunteerSupport: string;
   fullName: string;
   officialEmail: string;
   preferredEmail: string;
@@ -42,6 +44,13 @@ export async function submitDelegateRegistration(payload: SubmitDelegateInput): 
     }
   }
 
+  const registrationType =
+    payload.registrationType === "guest" ? "guest" : payload.registrationType === "volunteer" ? "volunteer" : "government";
+  const volunteerSupport = (payload.volunteerSupport ?? "").trim();
+  if (registrationType === "volunteer" && !VOLUNTEER_SUPPORT_OPTIONS.includes(volunteerSupport)) {
+    return { ok: false, error: "Please choose the kind of support you would prefer to provide." };
+  }
+
   if (!fullName) return { ok: false, error: "Please enter your full name." };
   if (!officialEmail) return { ok: false, error: "Please enter your official email." };
   if (!organization) return { ok: false, error: "Please select or enter your organization." };
@@ -58,7 +67,8 @@ export async function submitDelegateRegistration(payload: SubmitDelegateInput): 
 
   const { error: insertError } = await admin.from("delegate_registrations").insert({
     reference,
-    registration_type: payload.registrationType === "guest" ? "guest" : "government",
+    registration_type: registrationType,
+    volunteer_support: registrationType === "volunteer" ? volunteerSupport : null,
     full_name: fullName,
     official_email: officialEmail,
     preferred_email: preferredEmail,
@@ -93,6 +103,7 @@ export async function exportDelegatesCsv(): Promise<string> {
   const header = [
     "Reference",
     "Type",
+    "Volunteer support",
     "Full name",
     "Official email",
     "Preferred email",
@@ -107,7 +118,8 @@ export async function exportDelegatesCsv(): Promise<string> {
   const rows = delegates.map((d) =>
     [
       d.reference,
-      d.registrationType === "guest" ? "Guest" : "Government employee",
+      d.registrationType === "guest" ? "Guest" : d.registrationType === "volunteer" ? "Volunteer" : "Government employee",
+      d.volunteerSupport ?? "",
       d.fullName,
       d.officialEmail,
       d.preferredEmail,

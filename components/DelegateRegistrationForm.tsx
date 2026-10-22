@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { submitDelegateRegistration } from "@/lib/actions/delegates";
+import { VOLUNTEER_SUPPORT_OPTIONS } from "@/lib/delegate-config";
 
 function labelStyle(): React.CSSProperties {
   return { display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted)", marginBottom: 6 };
@@ -38,8 +39,9 @@ export default function DelegateRegistrationForm() {
   const [phase, setPhase] = useState<"form" | "confirm">("form");
   const [confirmRef, setConfirmRef] = useState("");
 
-  const [registrationType, setRegistrationType] = useState<"government" | "guest">("government");
+  const [registrationType, setRegistrationType] = useState<"government" | "guest" | "volunteer">("government");
   const [guestCode, setGuestCode] = useState("");
+  const [volunteerSupport, setVolunteerSupport] = useState("");
   const [fullName, setFullName] = useState("");
   const [officialEmail, setOfficialEmail] = useState("");
   const [preferredEmail, setPreferredEmail] = useState("");
@@ -71,6 +73,7 @@ export default function DelegateRegistrationForm() {
     const result = await submitDelegateRegistration({
       registrationType,
       guestCode,
+      volunteerSupport,
       fullName,
       officialEmail,
       preferredEmail,
@@ -93,6 +96,7 @@ export default function DelegateRegistrationForm() {
   function resetForm() {
     setRegistrationType("government");
     setGuestCode("");
+    setVolunteerSupport("");
     setFullName("");
     setOfficialEmail("");
     setPreferredEmail("");
@@ -239,13 +243,30 @@ export default function DelegateRegistrationForm() {
               <select
                 className="input"
                 value={registrationType}
-                onChange={(e) => setRegistrationType(e.target.value === "guest" ? "guest" : "government")}
+                onChange={(e) =>
+                  setRegistrationType(e.target.value === "guest" ? "guest" : e.target.value === "volunteer" ? "volunteer" : "government")
+                }
               >
                 <option value="government">Government employee</option>
                 <option value="guest">Guest</option>
+                <option value="volunteer">Volunteer</option>
               </select>
             </label>
-            {registrationType === "guest" ? (
+            {registrationType === "volunteer" ? (
+              <label style={{ display: "block" }}>
+                <span style={labelStyle()}>
+                  What kind of support would you prefer to provide? <span style={{ color: "var(--rej)" }}>*</span>
+                </span>
+                <select className="input" value={volunteerSupport} onChange={(e) => setVolunteerSupport(e.target.value)}>
+                  <option value="">Select a type of support...</option>
+                  {VOLUNTEER_SUPPORT_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : registrationType === "guest" ? (
               <label style={{ display: "block" }}>
                 <span style={labelStyle()}>
                   Guest joining code <span style={{ color: "var(--rej)" }}>*</span>

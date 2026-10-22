@@ -4,7 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export type DelegateView = {
   id: string;
   reference: string;
-  registrationType: "government" | "guest";
+  registrationType: "government" | "guest" | "volunteer";
+  volunteerSupport: string | null;
   fullName: string;
   officialEmail: string;
   preferredEmail: string;
@@ -27,7 +28,9 @@ export async function fetchDelegateRegistrations(): Promise<DelegateView[]> {
   return (delegates ?? []).map((d) => ({
     id: d.id,
     reference: d.reference,
-    registrationType: d.registration_type === "guest" ? "guest" : "government",
+    registrationType:
+      d.registration_type === "guest" ? "guest" : d.registration_type === "volunteer" ? "volunteer" : "government",
+    volunteerSupport: d.volunteer_support ?? null,
     fullName: d.full_name,
     officialEmail: d.official_email,
     preferredEmail: d.preferred_email,

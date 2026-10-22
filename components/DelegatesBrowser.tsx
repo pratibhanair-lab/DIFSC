@@ -18,7 +18,7 @@ function downloadCsv(csv: string) {
 
 export default function DelegatesBrowser({ delegates }: { delegates: DelegateView[] }) {
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "government" | "guest">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "government" | "guest" | "volunteer">("all");
   const [exporting, setExporting] = useState(false);
 
   const filtered = useMemo(() => {
@@ -72,11 +72,16 @@ export default function DelegatesBrowser({ delegates }: { delegates: DelegateVie
           className="input"
           style={{ width: 200 }}
           value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value === "government" ? "government" : e.target.value === "guest" ? "guest" : "all")}
+          onChange={(e) =>
+            setTypeFilter(
+              e.target.value === "government" ? "government" : e.target.value === "guest" ? "guest" : e.target.value === "volunteer" ? "volunteer" : "all"
+            )
+          }
         >
           <option value="all">All types</option>
           <option value="government">Government employees</option>
           <option value="guest">Guests</option>
+          <option value="volunteer">Volunteers</option>
         </select>
       </div>
 
@@ -94,7 +99,10 @@ export default function DelegatesBrowser({ delegates }: { delegates: DelegateVie
               </div>
             </div>
             <div style={{ width: 150, flexShrink: 0 }}>
-              <span className="chip">{d.registrationType === "guest" ? "Guest" : "Government employee"}</span>
+              <span className="chip">
+                {d.registrationType === "guest" ? "Guest" : d.registrationType === "volunteer" ? "Volunteer" : "Government employee"}
+              </span>
+              {d.volunteerSupport && <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 4 }}>{d.volunteerSupport}</div>}
             </div>
             <div style={{ fontSize: 12.5, color: "var(--muted)", width: 200, flexShrink: 0 }}>{d.officialEmail}</div>
             <div style={{ fontSize: 12.5, color: "var(--muted)", width: 130, flexShrink: 0 }}>{d.nationality}</div>
