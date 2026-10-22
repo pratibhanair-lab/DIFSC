@@ -76,6 +76,13 @@ see the delegate-specific entries under Where things live.
   entries below. `0007_delegate_registration_type.sql` (applied) adds
   `delegate_registrations.registration_type` (`'government' | 'guest'`, not
   null, default `'government'`, so older rows count as government).
+  `0008_volunteer_registration.sql` (applied) widens that check to also
+  allow `'volunteer'` and adds `delegate_registrations.volunteer_support`
+  (text, null for non-volunteers).
+- `lib/delegate-config.ts` — `VOLUNTEER_SUPPORT_OPTIONS` (the six support
+  types a volunteer can pick). Not a `"use server"` file, so both the form
+  and `submitDelegateRegistration` import it; the server rejects a volunteer
+  submission whose choice isn't in this list.
 - `lib/submission-config.ts` — the one place that says which tracks are
   open: `SESSION_SUBMISSIONS_OPEN`, `postersOpen()`, `POSTER_DEADLINE_LABEL`,
   and the "closed" messages. Not a `"use server"` file, so constants can be
@@ -191,8 +198,9 @@ see the delegate-specific entries under Where things live.
   logic through it for one field set.
 - `components/DelegateRegistrationForm.tsx` — the standalone delegate
   registration form (`/register`): "I am registering as"* (Government
-  employee, the default, or Guest — picking Guest reveals a required "Guest
-  joining code" field), full name*, official email*, preferred
+  employee, the default, Guest, or Volunteer — picking Guest reveals a
+  required "Guest joining code" field; picking Volunteer reveals a required
+  "What kind of support would you prefer to provide?" dropdown), full name*, official email*, preferred
   email (defaults to official email, editable — the "same as official"
   behavior is a plain `preferredEmailTouched` flag, not a checkbox),
   organization* (a fixed `<select>` of government entities, alphabetical,
@@ -210,8 +218,9 @@ see the delegate-specific entries under Where things live.
   field set with no session/speaker/poster nesting, and no review step.
 - `components/DelegatesBrowser.tsx` — admin-only table/list at
   `/admin/delegates` of every delegate registration, with a search box, a
-  type filter (all / government employees / guests), a type badge per row,
-  and a "Download CSV" button (includes a Type column) (`exportDelegatesCsv` in
+  type filter (all / government employees / guests / volunteers), a type badge
+  per row (volunteers also show their support type), and a "Download CSV"
+  button (includes Type and Volunteer support columns) (`exportDelegatesCsv` in
   `lib/actions/delegates.ts`) that builds the CSV server-side and triggers
   a client-side blob download. Read-only — there's nothing to
   approve/reject since this track isn't reviewed.
