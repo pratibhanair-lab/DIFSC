@@ -137,8 +137,9 @@ export default function DelegateRegistrationForm() {
           <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.6, margin: "0 0 24px" }}>
             Thank you for registering for DIFSC2026. Your digital registration badge will be sent to your email
             and mobile 3 days before the event. Please note that this registration is strictly for government
-            employees and guests. If you are neither a government employee nor a guest, your registration will not be
-            validated.
+            employees, guests and volunteers. If you are not a government employee, a guest or a volunteer, your
+            registration will not be validated. If you registered as a volunteer, you will be contacted before the
+            conference with your role.
           </p>
           <div className="card" style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "12px 18px", marginBottom: 32 }}>
             <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
@@ -226,7 +227,7 @@ export default function DelegateRegistrationForm() {
           style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, background: "var(--pend-bg)", border: "1px solid var(--pend)" }}
         >
           <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: 0, color: "var(--pend)", fontWeight: 600 }}>
-            This registration is exclusively for government employees and guests.
+            This registration is exclusively for government employees, guests and volunteers.
           </p>
         </div>
 

@@ -29,7 +29,7 @@ until 10 October 2026** (end of day, Dubai time, UTC+4), also defined in
 that date `/posters` shows the closed page and `submitPoster` rejects.
 
 There's also a **delegate registration** track at `/register` — a free
-registration form for government employees and guests (the link is shared
+registration form for government employees, guests and volunteers (the link is shared
 directly with them). Delegates pick a registration type on the form;
 **guests must enter a joining code** (`difsc@20`, checked server-side only).
 Unlike every other track, this one is **not reviewed/approved** — every
@@ -208,7 +208,7 @@ see the delegate-specific entries under Where things live.
   an admin-editable lookup table like `categories`/`org_sections`; picking
   "Other" reveals a free-text field whose value becomes the submitted
   organization), section/department, designation*, mobile number*,
-  nationality*. Shows a fixed "exclusively for government employees and guests"
+  nationality*. Shows a fixed "exclusively for government employees, guests and volunteers"
   notice near the top of the page, and on successful submit shows a fixed
   confirmation message (badge-by-email-and-mobile timeline + the same
   government-employees-and-guests wording) instead of a generic "thanks" —
