@@ -79,6 +79,23 @@ see the delegate-specific entries under Where things live.
   `0008_volunteer_registration.sql` (applied) widens that check to also
   allow `'volunteer'` and adds `delegate_registrations.volunteer_support`
   (text, null for non-volunteers).
+- **Workshops** (`/workshops`, public, no login): two workshops people can
+  show interest in (one or both). `lib/workshops-config.ts` holds the
+  workshop details (title/date/time/venue) plus `about` (null) and
+  `speakers` ([]) which are placeholders until the owner supplies the text
+  — edit that file to fill them in; the page shows "coming soon" meanwhile.
+  `0009_workshop_registrations.sql` adds `workshop_registrations` (one row
+  per person per workshop, unique on `workshop_id` + lowercase `email`,
+  `status`: interested/confirmed/waitlisted/declined). Seats are limited, so
+  an admin reviews at `/admin/workshops` (`WorkshopsBrowser.tsx`: search,
+  workshop + status filters, per-row status dropdown, CSV download).
+  `lib/actions/workshops.ts` has `submitWorkshopRegistration` (re-submitting
+  updates details but keeps the existing status), `updateWorkshopStatus` and
+  `exportWorkshopsCsv`. Organization is free text here (deliberately not the
+  `/register` dropdown); designation is optional. The thank-you is on-screen
+  only — no email is sent (Resend sandbox), and changing a status sends
+  nothing; the admin emails confirmations manually. Deliberately **not**
+  linked from `/register` or any other page.
 - `lib/delegate-config.ts` — `VOLUNTEER_SUPPORT_OPTIONS` (the six support
   types a volunteer can pick). Not a `"use server"` file, so both the form
   and `submitDelegateRegistration` import it; the server rejects a volunteer

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { fetchAllSubmissions, titleOf } from "@/lib/submissions-view";
 import { fetchPosterSubmissions } from "@/lib/posters-view";
 import { fetchDelegateRegistrations } from "@/lib/delegates-view";
+import { fetchWorkshopRegistrations } from "@/lib/workshops-view";
 import { createAdminClient } from "@/lib/supabase/admin";
 import StatusChip from "@/components/StatusChip";
 import TypeBadge from "@/components/TypeBadge";
@@ -12,10 +13,11 @@ export const dynamic = "force-dynamic";
 const CAT_COLORS = ["#17805A", "#2563B0", "#B0632A", "#8A5CD1", "#158A8F", "#C0453A", "#4B7A1E"];
 
 export default async function AdminOverviewPage() {
-  const [submissions, posters, delegates] = await Promise.all([
+  const [submissions, posters, delegates, workshopRegistrations] = await Promise.all([
     fetchAllSubmissions(),
     fetchPosterSubmissions(),
     fetchDelegateRegistrations(),
+    fetchWorkshopRegistrations(),
   ]);
   const admin = createAdminClient();
   const [{ data: categories }, { data: orgSections }] = await Promise.all([
@@ -116,6 +118,19 @@ export default async function AdminOverviewPage() {
           <div>
             <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginBottom: 10 }}>Registered delegates</div>
             <div className="heading" style={{ fontWeight: 800, fontSize: 38, lineHeight: 1, color: "var(--ink)" }}>{delegateCount}</div>
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>View list &rarr;</span>
+        </Link>
+      </div>
+
+      <div style={{ marginBottom: 32 }}>
+        <div className="heading" style={{ fontWeight: 700, fontSize: 15, marginBottom: 14 }}>
+          Workshops
+        </div>
+        <Link href="/admin/workshops" className="card" style={{ ...cardBase, display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "3px solid var(--line)" }}>
+          <div>
+            <div style={{ fontSize: 13, color: "var(--muted)", fontWeight: 600, marginBottom: 10 }}>Workshop registrations</div>
+            <div className="heading" style={{ fontWeight: 800, fontSize: 38, lineHeight: 1, color: "var(--ink)" }}>{workshopRegistrations.length}</div>
           </div>
           <span style={{ fontSize: 13, fontWeight: 600 }}>View list &rarr;</span>
         </Link>
