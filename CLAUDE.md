@@ -228,9 +228,13 @@ see the delegate-specific entries under Where things live.
   nationality*. Shows a fixed "exclusively for government employees, guests and volunteers"
   notice near the top of the page, and on successful submit shows a fixed
   confirmation message (badge-by-email-and-mobile timeline + the same
-  government-employees-and-guests wording) instead of a generic "thanks" —
-  don't reword either without being asked, they're policy text, not
-  copywriting. Not a `SuggestionForm` or `PosterSubmissionForm` variant —
+  government-employees-and-guests wording) instead of a generic "thanks".
+  **Volunteers get a different confirmation** ("Welcome to the Team! 🎉":
+  what they'll do, plus four next steps with links to the volunteer WhatsApp
+  community, foodsafetydubai.com, and the conference LinkedIn page — the
+  links are hardcoded in the component); chosen by `registrationType ===
+  "volunteer"`. Don't reword any of these without being asked, they're
+  policy text, not copywriting. Not a `SuggestionForm` or `PosterSubmissionForm` variant —
   kept separate for the same reason posters are: a completely different
   field set with no session/speaker/poster nesting, and no review step.
 - `components/DelegatesBrowser.tsx` — admin-only table/list at

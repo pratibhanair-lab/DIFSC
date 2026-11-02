@@ -131,16 +131,70 @@ export default function DelegateRegistrationForm() {
               <path d="M20 6L9 17l-5-5" />
             </svg>
           </div>
-          <h1 className="heading" style={{ fontWeight: 800, fontSize: 28, margin: "0 0 12px" }}>
-            Registration received
-          </h1>
-          <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.6, margin: "0 0 24px" }}>
-            Thank you for registering for DIFSC2026. Your digital registration badge will be sent to your email
-            and mobile 3 days before the event. Please note that this registration is strictly for government
-            employees, guests and volunteers. If you are not a government employee, a guest or a volunteer, your
-            registration will not be validated. If you registered as a volunteer, you will be contacted before the
-            conference with your role.
-          </p>
+          {registrationType === "volunteer" ? (
+            <>
+              <h1 className="heading" style={{ fontWeight: 800, fontSize: 28, margin: "0 0 12px" }}>
+                Welcome to the Team! 🎉
+              </h1>
+              <div style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.6, margin: "0 0 24px", textAlign: "left" }}>
+                <p style={{ margin: "0 0 14px" }}>
+                  Thank you for volunteering for the 20th Dubai International Food Safety Conference. As a
+                  volunteer, you will play a key role in assisting with registration, session management, delegate
+                  support, and social media promotion—all while gaining valuable access to industry leaders,
+                  cutting-edge technologies, and global best practices.
+                </p>
+                <p style={{ margin: "0 0 8px", fontWeight: 600 }}>Next Steps to Get Started:</p>
+                <ul style={{ margin: "0 0 14px", paddingLeft: 20 }}>
+                  <li style={{ marginBottom: 8 }}>
+                    <strong>Join the Volunteer WhatsApp Community:</strong> Click{" "}
+                    <a href="https://chat.whatsapp.com/JxuQvHR1qpe1uCVmMrzwZ1" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>
+                      here
+                    </a>{" "}
+                    to receive task assignments and updates.
+                  </li>
+                  <li style={{ marginBottom: 8 }}>
+                    <strong>Explore the Event:</strong> Visit{" "}
+                    <a href="https://foodsafetydubai.com" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)" }}>
+                      foodsafetydubai.com
+                    </a>{" "}
+                    to review the program, speakers, exhibitors, and key themes.
+                  </li>
+                  <li style={{ marginBottom: 8 }}>
+                    <strong>Get the App:</strong> Watch your inbox—access details for the official conference app
+                    will arrive shortly.
+                  </li>
+                  <li>
+                    <strong>Connect &amp; Spread the Word:</strong> Update your LinkedIn profile to highlight your
+                    involvement, and follow our{" "}
+                    <a
+                      href="https://www.linkedin.com/showcase/dubai-international-food-safety-conference-2026/home/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "var(--accent)" }}
+                    >
+                      LinkedIn Page
+                    </a>{" "}
+                    and social channels to share event highlights.
+                  </li>
+                </ul>
+                <p style={{ margin: 0 }}>
+                  We’re excited to work with you to make this landmark 20th edition a success!
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="heading" style={{ fontWeight: 800, fontSize: 28, margin: "0 0 12px" }}>
+                Registration received
+              </h1>
+              <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.6, margin: "0 0 24px" }}>
+                Thank you for registering for DIFSC2026. Your digital registration badge will be sent to your email
+                and mobile 3 days before the event. Please note that this registration is strictly for government
+                employees, guests and volunteers. If you are not a government employee, a guest or a volunteer, your
+                registration will not be validated.
+              </p>
+            </>
+          )}
           <div className="card" style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "12px 18px", marginBottom: 32 }}>
             <span className="mono" style={{ fontSize: 12, color: "var(--muted)" }}>
               REFERENCE
