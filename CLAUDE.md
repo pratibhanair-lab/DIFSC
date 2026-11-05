@@ -31,7 +31,7 @@ that date `/posters` shows the closed page and `submitPoster` rejects.
 There's also a **delegate registration** track at `/register` — a free
 registration form for government employees, guests and volunteers (the link is shared
 directly with them). Delegates pick a registration type on the form;
-**guests must enter a joining code** (`difsc@20`, checked server-side only).
+**guests must enter a joining code** (`20@difsc`, checked server-side only).
 Unlike every other track, this one is **not reviewed/approved** — every
 registration is final the moment it's submitted; eligibility is enforced by
 the type choice, the guest code and the wording on the form, not an admin

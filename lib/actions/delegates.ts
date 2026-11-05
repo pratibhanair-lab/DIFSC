@@ -7,7 +7,7 @@ import { fetchDelegateRegistrations } from "@/lib/delegates-view";
 import { VOLUNTEER_SUPPORT_OPTIONS } from "@/lib/delegate-config";
 
 // Checked here, on the server only, so the code never ships to the browser.
-const GUEST_JOINING_CODE = "difsc@20";
+const GUEST_JOINING_CODE = "20@difsc";
 
 export type SubmitDelegateInput = {
   registrationType: "government" | "guest" | "volunteer";
