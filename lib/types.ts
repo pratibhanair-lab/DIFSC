@@ -84,7 +84,7 @@ export type PosterSubmission = {
 export type DelegateRegistration = {
   id: string;
   reference: string;
-  registration_type: "government" | "guest" | "volunteer";
+  registration_type: "government" | "guest" | "volunteer" | "online";
   volunteer_support: string | null;
   full_name: string;
   official_email: string;

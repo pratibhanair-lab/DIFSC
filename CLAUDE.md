@@ -78,7 +78,12 @@ see the delegate-specific entries under Where things live.
   null, default `'government'`, so older rows count as government).
   `0008_volunteer_registration.sql` (applied) widens that check to also
   allow `'volunteer'` and adds `delegate_registrations.volunteer_support`
-  (text, null for non-volunteers).
+  (text, null for non-volunteers). `0010_online_registration.sql` (**must be
+  run in Supabase before the online code goes live**) widens it again to
+  allow `'online'` (applied) — a fourth type with its own joining code
+  (`ONLINE_JOINING_CODE` in `lib/actions/delegates.ts`, server-only, same
+  pattern as the guest code) and its own short confirmation message ("Thank
+  you for registering for DIFSC20 ... see you online"). No extra fields.
 - **Workshops** (`/workshops`, public, no login): two workshops people can
   show interest in (one or both). `lib/workshops-config.ts` holds the
   workshop details (title/date/time/venue) plus `about` (null) and
@@ -215,8 +220,11 @@ see the delegate-specific entries under Where things live.
   logic through it for one field set.
 - `components/DelegateRegistrationForm.tsx` — the standalone delegate
   registration form (`/register`): "I am registering as"* (Government
-  employee, the default, Guest, or Volunteer — picking Guest reveals a
-  required "Guest joining code" field; picking Volunteer reveals a required
+  employee, the default, Guest, Volunteer, or Online — picking Guest reveals a
+  required "Guest joining code" field; picking Online reveals a required
+  "Online joining code" field (its own code, reusing the same `guestCode`
+  form state; the server checks it against the right constant by type);
+  picking Volunteer reveals a required
   "What kind of support would you prefer to provide?" dropdown), full name*, official email*, preferred
   email (defaults to official email, editable — the "same as official"
   behavior is a plain `preferredEmailTouched` flag, not a checkbox),
@@ -225,7 +233,7 @@ see the delegate-specific entries under Where things live.
   an admin-editable lookup table like `categories`/`org_sections`; picking
   "Other" reveals a free-text field whose value becomes the submitted
   organization), section/department, designation*, mobile number*,
-  nationality*. Shows a fixed "exclusively for government employees, guests and volunteers"
+  nationality*. Shows a fixed "exclusively for government employees, guests, volunteers and online participants"
   notice near the top of the page, and on successful submit shows a fixed
   confirmation message (badge-by-email-and-mobile timeline + the same
   government-employees-and-guests wording) instead of a generic "thanks".
@@ -233,13 +241,17 @@ see the delegate-specific entries under Where things live.
   what they'll do, plus four next steps with links to the volunteer WhatsApp
   community, foodsafetydubai.com, and the conference LinkedIn page — the
   links are hardcoded in the component); chosen by `registrationType ===
-  "volunteer"`. Don't reword any of these without being asked, they're
+  "volunteer"`. **Online registrants get their own short confirmation**
+  ("Thank you for registering for DIFSC20. Instructions on downloading and
+  using the conference app will be sent to your inbox. We look forward to
+  seeing you online."), chosen by `registrationType === "online"`. Don't
+  reword any of these without being asked, they're
   policy text, not copywriting. Not a `SuggestionForm` or `PosterSubmissionForm` variant —
   kept separate for the same reason posters are: a completely different
   field set with no session/speaker/poster nesting, and no review step.
 - `components/DelegatesBrowser.tsx` — admin-only table/list at
   `/admin/delegates` of every delegate registration, with a search box, a
-  type filter (all / government employees / guests / volunteers), a type badge
+  type filter (all / government employees / guests / volunteers / online), a type badge
   per row (volunteers also show their support type), and a "Download CSV"
   button (includes Type and Volunteer support columns) (`exportDelegatesCsv` in
   `lib/actions/delegates.ts`) that builds the CSV server-side and triggers

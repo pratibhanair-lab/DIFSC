@@ -8,9 +8,10 @@ import { VOLUNTEER_SUPPORT_OPTIONS } from "@/lib/delegate-config";
 
 // Checked here, on the server only, so the code never ships to the browser.
 const GUEST_JOINING_CODE = "20@difsc";
+const ONLINE_JOINING_CODE = "iafp";
 
 export type SubmitDelegateInput = {
-  registrationType: "government" | "guest" | "volunteer";
+  registrationType: "government" | "guest" | "volunteer" | "online";
   guestCode: string;
   volunteerSupport: string;
   fullName: string;
@@ -44,8 +45,22 @@ export async function submitDelegateRegistration(payload: SubmitDelegateInput): 
     }
   }
 
+  if (payload.registrationType === "online") {
+    const code = (payload.guestCode ?? "").trim();
+    if (!code) return { ok: false, error: "Please enter your online joining code." };
+    if (code !== ONLINE_JOINING_CODE) {
+      return { ok: false, error: "That online joining code isn't correct. Please check it and try again." };
+    }
+  }
+
   const registrationType =
-    payload.registrationType === "guest" ? "guest" : payload.registrationType === "volunteer" ? "volunteer" : "government";
+    payload.registrationType === "guest"
+      ? "guest"
+      : payload.registrationType === "volunteer"
+        ? "volunteer"
+        : payload.registrationType === "online"
+          ? "online"
+          : "government";
   const volunteerSupport = (payload.volunteerSupport ?? "").trim();
   if (registrationType === "volunteer" && !VOLUNTEER_SUPPORT_OPTIONS.includes(volunteerSupport)) {
     return { ok: false, error: "Please choose the kind of support you would prefer to provide." };
@@ -118,7 +133,13 @@ export async function exportDelegatesCsv(): Promise<string> {
   const rows = delegates.map((d) =>
     [
       d.reference,
-      d.registrationType === "guest" ? "Guest" : d.registrationType === "volunteer" ? "Volunteer" : "Government employee",
+      d.registrationType === "guest"
+        ? "Guest"
+        : d.registrationType === "volunteer"
+          ? "Volunteer"
+          : d.registrationType === "online"
+            ? "Online"
+            : "Government employee",
       d.volunteerSupport ?? "",
       d.fullName,
       d.officialEmail,

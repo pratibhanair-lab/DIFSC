@@ -18,7 +18,7 @@ function downloadCsv(csv: string) {
 
 export default function DelegatesBrowser({ delegates }: { delegates: DelegateView[] }) {
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "government" | "guest" | "volunteer">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "government" | "guest" | "volunteer" | "online">("all");
   const [exporting, setExporting] = useState(false);
 
   const filtered = useMemo(() => {
@@ -74,7 +74,15 @@ export default function DelegatesBrowser({ delegates }: { delegates: DelegateVie
           value={typeFilter}
           onChange={(e) =>
             setTypeFilter(
-              e.target.value === "government" ? "government" : e.target.value === "guest" ? "guest" : e.target.value === "volunteer" ? "volunteer" : "all"
+              e.target.value === "government"
+                ? "government"
+                : e.target.value === "guest"
+                  ? "guest"
+                  : e.target.value === "volunteer"
+                    ? "volunteer"
+                    : e.target.value === "online"
+                      ? "online"
+                      : "all"
             )
           }
         >
@@ -82,6 +90,7 @@ export default function DelegatesBrowser({ delegates }: { delegates: DelegateVie
           <option value="government">Government employees</option>
           <option value="guest">Guests</option>
           <option value="volunteer">Volunteers</option>
+          <option value="online">Online</option>
         </select>
       </div>
 
@@ -100,7 +109,13 @@ export default function DelegatesBrowser({ delegates }: { delegates: DelegateVie
             </div>
             <div style={{ width: 150, flexShrink: 0 }}>
               <span className="chip">
-                {d.registrationType === "guest" ? "Guest" : d.registrationType === "volunteer" ? "Volunteer" : "Government employee"}
+                {d.registrationType === "guest"
+                  ? "Guest"
+                  : d.registrationType === "volunteer"
+                    ? "Volunteer"
+                    : d.registrationType === "online"
+                      ? "Online"
+                      : "Government employee"}
               </span>
               {d.volunteerSupport && <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 4 }}>{d.volunteerSupport}</div>}
             </div>

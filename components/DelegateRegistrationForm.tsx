@@ -39,7 +39,7 @@ export default function DelegateRegistrationForm() {
   const [phase, setPhase] = useState<"form" | "confirm">("form");
   const [confirmRef, setConfirmRef] = useState("");
 
-  const [registrationType, setRegistrationType] = useState<"government" | "guest" | "volunteer">("government");
+  const [registrationType, setRegistrationType] = useState<"government" | "guest" | "volunteer" | "online">("government");
   const [guestCode, setGuestCode] = useState("");
   const [volunteerSupport, setVolunteerSupport] = useState("");
   const [fullName, setFullName] = useState("");
@@ -182,6 +182,16 @@ export default function DelegateRegistrationForm() {
                 </p>
               </div>
             </>
+          ) : registrationType === "online" ? (
+            <>
+              <h1 className="heading" style={{ fontWeight: 800, fontSize: 28, margin: "0 0 12px" }}>
+                Registration received
+              </h1>
+              <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.6, margin: "0 0 24px" }}>
+                Thank you for registering for DIFSC20. Instructions on downloading and using the conference app will
+                be sent to your inbox. We look forward to seeing you online.
+              </p>
+            </>
           ) : (
             <>
               <h1 className="heading" style={{ fontWeight: 800, fontSize: 28, margin: "0 0 12px" }}>
@@ -281,7 +291,7 @@ export default function DelegateRegistrationForm() {
           style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, background: "var(--pend-bg)", border: "1px solid var(--pend)" }}
         >
           <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: 0, color: "var(--pend)", fontWeight: 600 }}>
-            This registration is exclusively for government employees, guests and volunteers.
+            This registration is exclusively for government employees, guests, volunteers and online participants.
           </p>
         </div>
 
@@ -299,12 +309,21 @@ export default function DelegateRegistrationForm() {
                 className="input"
                 value={registrationType}
                 onChange={(e) =>
-                  setRegistrationType(e.target.value === "guest" ? "guest" : e.target.value === "volunteer" ? "volunteer" : "government")
+                  setRegistrationType(
+                    e.target.value === "guest"
+                      ? "guest"
+                      : e.target.value === "volunteer"
+                        ? "volunteer"
+                        : e.target.value === "online"
+                          ? "online"
+                          : "government"
+                  )
                 }
               >
                 <option value="government">Government employee</option>
                 <option value="guest">Guest</option>
                 <option value="volunteer">Volunteer</option>
+                <option value="online">Online</option>
               </select>
             </label>
             {registrationType === "volunteer" ? (
@@ -325,6 +344,13 @@ export default function DelegateRegistrationForm() {
               <label style={{ display: "block" }}>
                 <span style={labelStyle()}>
                   Guest joining code <span style={{ color: "var(--rej)" }}>*</span>
+                </span>
+                <input className="input" value={guestCode} onChange={(e) => setGuestCode(e.target.value)} placeholder="Enter your joining code" />
+              </label>
+            ) : registrationType === "online" ? (
+              <label style={{ display: "block" }}>
+                <span style={labelStyle()}>
+                  Online joining code <span style={{ color: "var(--rej)" }}>*</span>
                 </span>
                 <input className="input" value={guestCode} onChange={(e) => setGuestCode(e.target.value)} placeholder="Enter your joining code" />
               </label>
