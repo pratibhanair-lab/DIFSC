@@ -79,7 +79,7 @@ export default function WorkshopsPage() {
           DIFSC 2026 Workshops
         </h1>
         <p style={{ color: "var(--muted)", fontSize: 15, lineHeight: 1.6, margin: "0 0 28px", maxWidth: 560 }}>
-          Two workshops are being held alongside the conference. You can show your interest in one or both below.
+          Three workshops are being held alongside the conference. You can show your interest in one or more below.
         </p>
 
         {WORKSHOPS.map((w, i) => (
@@ -97,7 +97,7 @@ export default function WorkshopsPage() {
             </div>
 
             <div style={sectionLabel}>About this workshop</div>
-            <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0, color: w.about ? "var(--ink)" : "var(--muted)" }}>
+            <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0, whiteSpace: "pre-line", color: w.about ? "var(--ink)" : "var(--muted)" }}>
               {w.about ?? "Details coming soon."}
             </p>
 

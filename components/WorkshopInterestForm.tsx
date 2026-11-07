@@ -111,7 +111,7 @@ export default function WorkshopInterestForm() {
           Show your interest
         </h3>
         <p style={{ color: "var(--muted)", fontSize: 13, margin: "0 0 20px" }}>
-          Choose one or both workshops. Seats are limited and every request is reviewed before it is confirmed.
+          Choose one or more workshops. Seats are limited and every request is reviewed before it is confirmed.
         </p>
 
         <div style={{ marginBottom: 22 }}>
