@@ -18,6 +18,7 @@ export type Workshop = {
   dateLabel: string;
   timeLabel: string;
   venue: string;
+  capacity: number; // after this many seats are taken, new sign-ups go to the waiting list
   about: string | null;
   speakers: WorkshopSpeaker[];
 };
@@ -29,6 +30,7 @@ export const WORKSHOPS: Workshop[] = [
     dateLabel: "18 November 2026",
     timeLabel: "8:30 AM – 12:00 PM",
     venue: "Marriott Al Jadaf Hotel",
+    capacity: 40,
     about:
       "Food safety regulation has focused on identifying non-conformances and enforcing compliance. As food safety culture gains regulatory recognition, inspectors must also understand how leadership and organisational behaviour shape outcomes. This workshop shows how routine inspection evidence (maintenance, staff practices, corrective actions, management accountability) can reveal cultural maturity. It also explores the competencies modern regulators need.\n\n" +
       "Participants will be able to:\n\n" +
@@ -47,6 +49,7 @@ export const WORKSHOPS: Workshop[] = [
     dateLabel: "18 November 2026",
     timeLabel: "2:00 PM – 5:00 PM",
     venue: "Marriott Al Jadaf Hotel",
+    capacity: 30,
     about:
       "An ENFIT Qualified Inspector (EQI) is a certified professional trained to evaluate, assess, and minimize risks associated with logistics, bulk transport, and cleaning infrastructure within the food supply chain. Developed by ENFIT, the International Association for Supply Chain Safety, this specialized credential ensures that logistics and cleaning operations comply with strict hygiene, food safety, and food defense protocols.\n\n" +
       "What you'll master:\n\n" +
@@ -64,6 +67,7 @@ export const WORKSHOPS: Workshop[] = [
     dateLabel: "19 November 2026",
     timeLabel: "8:30 AM – 4:30 PM",
     venue: "Marriott Al Jadaf Hotel",
+    capacity: 40,
     about:
       "Protecting public health and maintaining supply-chain continuity requires moving beyond conventional safety measures. This 8-hour masterclass bridges the gap between regulatory theory and frontline decision-making, equipping you with a defensible, risk-based methodology to anticipate threats, eliminate vulnerabilities, and protect consumer trust.",
     speakers: [

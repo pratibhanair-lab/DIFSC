@@ -15,7 +15,9 @@ export type SubmitWorkshopInput = {
   designation: string;
 };
 
-export type SubmitWorkshopResult = { ok: true; firstName: string; workshopIds: string[] } | { ok: false; error: string };
+export type SubmitWorkshopResult =
+  | { ok: true; firstName: string; workshopIds: string[]; waitlistedIds: string[] }
+  | { ok: false; error: string };
 
 export async function submitWorkshopRegistration(payload: SubmitWorkshopInput): Promise<SubmitWorkshopResult> {
   const fullName = payload.fullName.trim();
@@ -37,29 +39,63 @@ export async function submitWorkshopRegistration(payload: SubmitWorkshopInput): 
 
   const admin = createAdminClient();
 
-  // Registering again with the same email for the same workshop updates the
-  // details already on file. Status isn't included, so a seat an admin has
-  // already confirmed or declined keeps its status.
-  const { error } = await admin.from("workshop_registrations").upsert(
-    workshopIds.map((workshopId) => ({
-      workshop_id: workshopId,
-      full_name: fullName,
-      email,
-      mobile_number: mobileNumber,
-      organization,
-      designation: designation || null,
-    })),
-    { onConflict: "workshop_id,email" }
-  );
+  const saveError = { ok: false as const, error: "Something went wrong saving your registration. Please try again." };
+  const details = {
+    full_name: fullName,
+    mobile_number: mobileNumber,
+    organization,
+    designation: designation || null,
+  };
 
-  if (error) {
-    return { ok: false, error: "Something went wrong saving your registration. Please try again." };
+  // Registering again with the same email for the same workshop only updates
+  // the details already on file — the status (confirmed, declined,
+  // waitlisted...) stays exactly as it was.
+  const { data: existingRows, error: existingError } = await admin
+    .from("workshop_registrations")
+    .select("workshop_id, status")
+    .eq("email", email)
+    .in("workshop_id", workshopIds);
+  if (existingError) return saveError;
+  const existingStatus = new Map((existingRows ?? []).map((r) => [r.workshop_id as string, r.status as string]));
+
+  const waitlistedIds: string[] = [];
+
+  for (const workshopId of workshopIds) {
+    const existing = existingStatus.get(workshopId);
+    if (existing) {
+      const { error } = await admin
+        .from("workshop_registrations")
+        .update(details)
+        .eq("workshop_id", workshopId)
+        .eq("email", email);
+      if (error) return saveError;
+      if (existing === "waitlisted") waitlistedIds.push(workshopId);
+      continue;
+    }
+
+    // A new sign-up. Seats are taken by interested + confirmed people;
+    // waitlisted and declined people don't use one up. Once the workshop is
+    // full, the new person goes straight onto the waiting list.
+    const capacity = WORKSHOPS.find((w) => w.id === workshopId)?.capacity ?? Infinity;
+    const { count, error: countError } = await admin
+      .from("workshop_registrations")
+      .select("id", { count: "exact", head: true })
+      .eq("workshop_id", workshopId)
+      .in("status", ["interested", "confirmed"]);
+    if (countError) return saveError;
+
+    const status = (count ?? 0) >= capacity ? "waitlisted" : "interested";
+    const { error } = await admin
+      .from("workshop_registrations")
+      .insert({ workshop_id: workshopId, email, status, ...details });
+    if (error) return saveError;
+    if (status === "waitlisted") waitlistedIds.push(workshopId);
   }
 
   revalidatePath("/admin");
   revalidatePath("/admin/workshops");
 
-  return { ok: true, firstName: fullName.split(" ")[0], workshopIds };
+  return { ok: true, firstName: fullName.split(" ")[0], workshopIds, waitlistedIds };
 }
 
 export async function updateWorkshopStatus(id: string, status: string): Promise<{ ok: boolean; error?: string }> {

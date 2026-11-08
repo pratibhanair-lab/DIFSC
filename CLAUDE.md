@@ -84,11 +84,19 @@ see the delegate-specific entries under Where things live.
   (`ONLINE_JOINING_CODE` in `lib/actions/delegates.ts`, server-only, same
   pattern as the guest code) and its own short confirmation message ("Thank
   you for registering for DIFSC20 ... see you online"). No extra fields.
-- **Workshops** (`/workshops`, public, no login): two workshops people can
-  show interest in (one or both). `lib/workshops-config.ts` holds the
-  workshop details (title/date/time/venue) plus `about` (null) and
-  `speakers` ([]) which are placeholders until the owner supplies the text
-  — edit that file to fill them in; the page shows "coming soon" meanwhile.
+- **Workshops** (`/workshops`, public, no login): three workshops people can
+  show interest in (one or more). `lib/workshops-config.ts` holds each
+  workshop's details (title/date/time/venue/`about`/`speakers`) and its
+  `capacity` (40 / 30 / 40, in page order). Seat limit: in
+  `submitWorkshopRegistration`, a **new** sign-up is saved as `waitlisted`
+  instead of `interested` when the workshop already has `capacity` people
+  with status interested + confirmed (waitlisted and declined don't use a
+  seat). Re-submitting never changes an existing status. The on-screen
+  thank-you tells waitlisted people so, per workshop. No migration was
+  needed (`waitlisted` already existed). Not race-proof: two simultaneous
+  sign-ups for the last seat could both get in — fix by hand in
+  `/admin/workshops`. Limits apply to new sign-ups only; earlier ones
+  keep their status.
   `0009_workshop_registrations.sql` adds `workshop_registrations` (one row
   per person per workshop, unique on `workshop_id` + lowercase `email`,
   `status`: interested/confirmed/waitlisted/declined). Seats are limited, so

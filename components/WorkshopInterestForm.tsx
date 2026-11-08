@@ -11,6 +11,7 @@ function labelStyle(): React.CSSProperties {
 export default function WorkshopInterestForm() {
   const [phase, setPhase] = useState<"form" | "confirm">("form");
   const [confirmedFirstName, setConfirmedFirstName] = useState("");
+  const [waitlistedIds, setWaitlistedIds] = useState<string[]>([]);
 
   const [selected, setSelected] = useState<string[]>([]);
   const [fullName, setFullName] = useState("");
@@ -50,11 +51,13 @@ export default function WorkshopInterestForm() {
       return;
     }
     setConfirmedFirstName(result.firstName);
+    setWaitlistedIds(result.waitlistedIds);
     setPhase("confirm");
   }
 
   function resetForm() {
     setSelected([]);
+    setWaitlistedIds([]);
     setFullName("");
     setEmail("");
     setMobileNumber("");
@@ -92,8 +95,14 @@ export default function WorkshopInterestForm() {
         </p>
         <ul style={{ listStyle: "none", padding: 0, margin: "0 0 28px" }}>
           {WORKSHOPS.filter((w) => selected.includes(w.id)).map((w) => (
-            <li key={w.id} style={{ fontWeight: 600, fontSize: 14.5, marginBottom: 6 }}>
-              {w.title}
+            <li key={w.id} style={{ marginBottom: 12 }}>
+              <div style={{ fontWeight: 600, fontSize: 14.5 }}>{w.title}</div>
+              {waitlistedIds.includes(w.id) && (
+                <div style={{ fontSize: 13, lineHeight: 1.55, color: "var(--pend)", margin: "4px auto 0", maxWidth: 440 }}>
+                  This workshop has reached its limit of {w.capacity} registrations, so you have been placed on the
+                  waiting list. We will contact you by email if a seat becomes available.
+                </div>
+              )}
             </li>
           ))}
         </ul>
