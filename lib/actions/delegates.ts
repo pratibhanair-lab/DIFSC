@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchDelegateRegistrations } from "@/lib/delegates-view";
-import { VOLUNTEER_SUPPORT_OPTIONS } from "@/lib/delegate-config";
 
 // Checked here, on the server only, so the code never ships to the browser.
 const GUEST_JOINING_CODE = "20@difsc";
@@ -57,18 +56,13 @@ export async function submitDelegateRegistration(payload: SubmitDelegateInput): 
     }
   }
 
+  // Volunteer registration is closed (rejected above), so only these three remain.
   const registrationType =
     payload.registrationType === "guest"
       ? "guest"
-      : payload.registrationType === "volunteer"
-        ? "volunteer"
-        : payload.registrationType === "online"
-          ? "online"
-          : "government";
-  const volunteerSupport = (payload.volunteerSupport ?? "").trim();
-  if (registrationType === "volunteer" && !VOLUNTEER_SUPPORT_OPTIONS.includes(volunteerSupport)) {
-    return { ok: false, error: "Please choose the kind of support you would prefer to provide." };
-  }
+      : payload.registrationType === "online"
+        ? "online"
+        : "government";
 
   if (!fullName) return { ok: false, error: "Please enter your full name." };
   if (!officialEmail) return { ok: false, error: "Please enter your official email." };
@@ -87,7 +81,7 @@ export async function submitDelegateRegistration(payload: SubmitDelegateInput): 
   const { error: insertError } = await admin.from("delegate_registrations").insert({
     reference,
     registration_type: registrationType,
-    volunteer_support: registrationType === "volunteer" ? volunteerSupport : null,
+    volunteer_support: null,
     full_name: fullName,
     official_email: officialEmail,
     preferred_email: preferredEmail,
