@@ -37,6 +37,10 @@ export async function submitDelegateRegistration(payload: SubmitDelegateInput): 
   const mobileNumber = payload.mobileNumber.trim();
   const nationality = payload.nationality.trim();
 
+  if (payload.registrationType === "volunteer") {
+    return { ok: false, error: "Volunteer registration is now closed." };
+  }
+
   if (payload.registrationType === "guest") {
     const code = (payload.guestCode ?? "").trim();
     if (!code) return { ok: false, error: "Please enter your guest joining code." };

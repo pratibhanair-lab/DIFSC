@@ -291,7 +291,10 @@ export default function DelegateRegistrationForm() {
           style={{ padding: "16px 20px", marginBottom: 28, maxWidth: 560, background: "var(--pend-bg)", border: "1px solid var(--pend)" }}
         >
           <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: 0, color: "var(--pend)", fontWeight: 600 }}>
-            This registration is exclusively for government employees, guests, volunteers and online participants.
+            This registration is exclusively for government employees, guests and online participants.
+          </p>
+          <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: "6px 0 0", color: "var(--pend)", fontWeight: 600 }}>
+            Volunteer registration is now closed.
           </p>
         </div>
 
@@ -322,7 +325,6 @@ export default function DelegateRegistrationForm() {
               >
                 <option value="government">Government employee</option>
                 <option value="guest">Guest</option>
-                <option value="volunteer">Volunteer</option>
                 <option value="online">Online</option>
               </select>
             </label>
