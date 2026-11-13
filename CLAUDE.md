@@ -109,6 +109,32 @@ see the delegate-specific entries under Where things live.
   only — no email is sent (Resend sandbox), and changing a status sends
   nothing; the admin emails confirmations manually. Deliberately **not**
   linked from `/register` or any other page.
+- **Conference programme (English + Arabic)** — imported from
+  `DIFSC Program 2026.xlsx`; separate from the older drag-and-drop scheduler
+  (`/schedule`, `/programme`), which is left untouched. `0011_programme.sql`
+  (**must be run in Supabase before this goes live**; also imports all 144
+  rows and is skipped if the tables already have data) adds
+  `programme_rooms` (rooms double as tracks; `name_en`/`name_ar`) and
+  `programme_items` (sessions + sub-sessions via `parent_id`, cascade delete;
+  only `title_en`, `day`, `start_time` are required — Arabic title, end
+  time, room, speakers, moderator, live link are optional; there's no days
+  table, a day is any date with an item). Descriptions from the spreadsheet
+  were deliberately not imported/shown. Speaker names and titles are never
+  translated; only room names and UI labels have Arabic text.
+  Public, no login: `/programme-en` and `/programme-ar` (both thin wrappers
+  around `components/ProgrammePage.tsx` → `PublicProgramme.tsx`; Arabic is
+  `dir="rtl"` with the Noto Sans Arabic font, and falls back to English text
+  where Arabic is blank). Editor for admins **and** referees:
+  `/review/programme` (`ProgrammeEditor.tsx`: edit/add/delete sessions,
+  sub-sessions and rooms, day filter, search, "Missing Arabic title"
+  filter). Server Actions in `lib/actions/programme.ts` (`requireRole`
+  admin+referee, then `revalidatePath` on the three pages). Labels/strings
+  and shared types live in `lib/programme-config.ts`; the read model is
+  `lib/programme-view.ts` (`fetchProgramme`). Not yet linked from the public
+  home/nav pages. `0012_programme_speakers_ar.sql` (**must be run in
+  Supabase**) adds optional `speakers_ar` and `moderator_ar`; the Arabic page
+  falls back to the English names when blank, and the editor's "Missing
+  Arabic" filter counts titles plus speaker/moderator names.
 - `lib/delegate-config.ts` — `VOLUNTEER_SUPPORT_OPTIONS` (the six support
   types a volunteer can pick). Not a `"use server"` file, so both the form
   and `submitDelegateRegistration` import it; the server rejects a volunteer

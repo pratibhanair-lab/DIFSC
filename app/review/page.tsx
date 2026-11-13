@@ -53,6 +53,9 @@ export default async function ReviewPage() {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <Link href="/review/programme" style={{ fontSize: 13, fontWeight: 600 }}>
+            Programme editor
+          </Link>
           <ThemeToggle />
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <div

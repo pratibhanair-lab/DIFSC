@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Libre_Franklin, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Libre_Franklin, IBM_Plex_Sans, IBM_Plex_Mono, Noto_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 
 const display = Libre_Franklin({
@@ -20,6 +20,12 @@ const mono = IBM_Plex_Mono({
   subsets: ["latin"],
 });
 
+const arabic = Noto_Sans_Arabic({
+  variable: "--font-arabic",
+  weight: ["400", "500", "600", "700"],
+  subsets: ["arabic"],
+});
+
 export const metadata: Metadata = {
   title: "DIFSC 2026 — Dubai International Food Safety Conference",
   description:
@@ -35,7 +41,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="verdant"
-      className={`${display.variable} ${body.variable} ${mono.variable}`}
+      className={`${display.variable} ${body.variable} ${mono.variable} ${arabic.variable}`}
     >
       <body>{children}</body>
     </html>
