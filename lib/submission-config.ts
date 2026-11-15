@@ -12,6 +12,12 @@ export function postersOpen(now: Date = new Date()): boolean {
   return now.getTime() <= POSTER_DEADLINE.getTime();
 }
 
+// Delegate registration (/register: government employees, guests and online).
+// Set to true to reopen the form and accept registrations again.
+export const DELEGATE_REGISTRATION_OPEN = false;
+export const DELEGATE_CLOSED_MESSAGE =
+  "Registration for the 20th Dubai International Food Safety Conference is now closed. Thank you for your interest.";
+
 export const SESSIONS_CLOSED_MESSAGE =
   "Speaker and session submissions are now closed. Thank you for your interest.";
 export const POSTERS_CLOSED_MESSAGE =

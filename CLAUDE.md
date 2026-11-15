@@ -28,6 +28,16 @@ until 10 October 2026** (end of day, Dubai time, UTC+4), also defined in
 `lib/submission-config.ts` (`postersOpen()`, `POSTER_DEADLINE_LABEL`); after
 that date `/posters` shows the closed page and `submitPoster` rejects.
 
+**Delegate registration is CLOSED for every type** (government employees, guests,
+online; volunteers were closed earlier) - one switch, `DELEGATE_REGISTRATION_OPEN` in
+`lib/submission-config.ts` (currently `false`; set it to `true` to reopen the form,
+which is otherwise untouched). While closed, `/register` shows
+`components/RegistrationClosed.tsx` and `submitDelegateRegistration` rejects every
+submission server-side (even with the right joining codes) before touching the
+database; the admin list/CSV at `/admin/delegates` keeps working. Workshops
+(`/workshops`) are separate and were not closed. The paragraph below describes the
+form as it works when open.
+
 There's also a **delegate registration** track at `/register` — a free
 registration form for government employees, guests and volunteers (the link is shared
 directly with them). Delegates pick a registration type on the form;

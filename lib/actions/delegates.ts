@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchDelegateRegistrations } from "@/lib/delegates-view";
+import { DELEGATE_CLOSED_MESSAGE, DELEGATE_REGISTRATION_OPEN } from "@/lib/submission-config";
 
 // Checked here, on the server only, so the code never ships to the browser.
 const GUEST_JOINING_CODE = "20@difsc";
@@ -28,6 +29,10 @@ export type SubmitDelegateResult =
   | { ok: false; error: string };
 
 export async function submitDelegateRegistration(payload: SubmitDelegateInput): Promise<SubmitDelegateResult> {
+  // Registration is closed for every type. Checked here on the server so an
+  // old link or an already-open tab can't sneak a registration through.
+  if (!DELEGATE_REGISTRATION_OPEN) return { ok: false, error: DELEGATE_CLOSED_MESSAGE };
+
   const fullName = payload.fullName.trim();
   const officialEmail = payload.officialEmail.trim();
   const preferredEmail = payload.preferredEmail.trim() || officialEmail;
