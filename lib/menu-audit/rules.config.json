@@ -1,0 +1,32 @@
+{
+  "_comment": "Menu audit thresholds. Change numbers here without touching code. Source: the rule book's Smart Choices table. For every nutrient except fibre, lower is better: GREEN <= green, AMBER <= amber, RED above that. Fibre is the opposite: GREEN >= green, AMBER >= amber, RED below that.",
+  "thresholds": {
+    "kcal": { "label": "Energy (kcal)", "perServing": { "green": 500, "amber": 600 }, "per100": { "green": 120, "amber": 500 } },
+    "fat": { "label": "Total fat (g)", "perServing": { "green": 19.5, "amber": 23 }, "per100": { "green": 3, "amber": 17.5 } },
+    "satFat": { "label": "Saturated fat (g)", "perServing": { "green": 5, "amber": 6 }, "per100": { "green": 1.5, "amber": 5 } },
+    "sodium": { "label": "Sodium (mg)", "perServing": { "green": 600, "amber": 700 }, "per100": { "green": 120, "amber": 600 } },
+    "sugar": { "label": "Added sugar (g)", "perServing": { "green": 6.75, "amber": 9 }, "per100": { "green": 2, "amber": 4.5 } },
+    "fibre": { "label": "Fibre (g)", "higherIsBetter": true, "perServing": { "green": 2.8, "amber": 2.52 }, "per100": { "green": 3, "amber": 2 } }
+  },
+  "weeklyLimits": { "minGreenPct": 30, "maxAmberPct": 30, "maxRedPct": 40 },
+  "exclude_fibre_in_classification": false,
+  "formTotalsTolerancePct": 5,
+  "plausibilityTolerancePct": 20,
+  "repetition": { "maxPerWeek": 2, "sideDishInfoPct": 30 },
+  "keywords": {
+    "sugarInIngredients": ["sugar", "honey", "syrup", "molasses", "date paste", "juice concentrate", "jam"],
+    "sugarIgnore": ["honey dew", "honeydew", "sugar free", "sugar-free", "no sugar", "no added sugar", "sugar snap", "sugarless"],
+    "wholeGrain": ["brown rice", "brown", "wholemeal", "whole-wheat", "whole wheat", "wholegrain", "whole grain", "oats", "oat", "bulgur", "quinoa", "freekeh"],
+    "meatOrFish": ["chicken", "beef", "lamb", "mutton", "turkey", "veal", "meat", "mince", "bacon", "ham", "sausage", "salami", "pepperoni", "fish", "tuna", "salmon", "cod", "hammour", "shrimp", "prawn", "seafood", "anchov"],
+    "beverageInMeal": ["milk", "juice", "laban", "water"],
+    "beverageNameIgnore": ["watermelon", "water melon", "milk chocolate", "buttermilk bun"]
+  },
+  "beverages": {
+    "juice": { "maxMl": 200, "juicePct": 100, "sugarMin": 0, "sugarMax": 0 },
+    "icePop": { "maxMl": 60, "juicePct": 100, "sugarMin": 0, "sugarMax": 0 },
+    "flavouredMilk": { "maxMl": 200, "sugarMin": 5, "sugarMax": 7 },
+    "plainMilk": { "maxMl": 250, "sugarMin": 0, "sugarMax": 0 },
+    "water": { "maxMl": null, "sugarMin": 0, "sugarMax": 0 },
+    "coffeeTea": { "maxMl": 240, "sugarMin": 5, "sugarMax": 7 }
+  }
+}

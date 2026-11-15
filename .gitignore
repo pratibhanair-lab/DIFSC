@@ -49,3 +49,8 @@ design-handoff/
 dev-out.log
 dev-err.log
 pid.txt
+
+# Menu audit: real caterer workbooks and reference files are confidential - never commit them
+/tests/fixtures/
+/*.xlsx
+/Rules for Menu audit.docx

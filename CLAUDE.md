@@ -330,6 +330,109 @@ see the delegate-specific entries under Where things live.
   login — read-only copy of `/admin/submissions`, reuses
   `fetchAllSubmissions`).
 
+## Menu Audit Tool (separate from the conference app)
+
+A standalone tool at `/menu-audit` (**in progress, not deployed**): anyone
+uploads a Dubai Municipality school-menu workbook (form DM-FSD-FO60) and gets
+a MySchoolFood audit report, marked as an AI-generated draft. It has **no
+relation to the conference features** — own routes, own code in
+`lib/menu-audit/`, no conference tables, and (by the owner's choice for now)
+**no login**. Full spec: `Menu Audit Tool – Build Spec.md`; rule book:
+`Rules for Menu audit.docx`. Build order follows the spec's section 6.
+
+- **Decisions made (15 Nov 2026):** fibre counts in the classification and
+  the report also shows the fibre-excluded result; added sugar per 100 g uses
+  the rule book (2 / 4.5 g); plain per-serving limits (no x1.2 factor);
+  menu data may be sent to the Anthropic API and the function may fall back
+  from Dubai (`dxb1`) to Mumbai (`bom1`); anyone can upload (no login).
+- **Done (step 1):** `lib/menu-audit/parse.ts` (exceljs, cached values only,
+  throws `UnrecognisedFormError`), `rules.ts` (pure rule engine: R4.1, R4.2,
+  A.1-A.4, R3b-d, B.1, D.1), `rules.config.json` (all thresholds/keywords),
+  `types.ts`. Run the tests with `npm test`.
+- **Tests:** `tests/menu-audit.test.ts` runs the spec's acceptance table
+  against the reference workbook at `tests/fixtures/ginza-form3.xlsx`. That
+  file is a real, confidential caterer form, so `tests/fixtures/` and
+  `/*.xlsx` are git-ignored — never commit workbooks. The acceptance tests
+  skip themselves when the file is absent.
+- **Done (step 2): the report.** `lib/menu-audit/report.ts` (`buildReport` →
+  plain serialisable `ReportData`: verdict, scorecard, weekly mix, per-rule
+  findings, accuracy, corrective actions, appendix) and
+  `components/menu-audit/AuditReport.tsx` + `AuditReport.module.css`
+  (brand colours = the variables at the top of the CSS; traffic-light colours
+  are fixed and always shown with their word). Disclaimer / footer / AI
+  reference-note wording is exported from `AuditReport.tsx` — fixed by the
+  spec, don't reword. "Download PDF" = `PrintButton` → browser print. The
+  per-page logo header, footer line and "Page n of N" use CSS page-margin
+  boxes (injected per report in `runningCss`), which only **Chrome/Edge**
+  support — Firefox prints without them. The "DRAFT – NOT REVIEWED"
+  watermark is always on (there is no review/sign-off workflow yet; the
+  sign-off block is a blank printable form).
+- **AI layer (guardrails done, Claude call not yet):** `ai-types.ts`
+  (schemas), `ai-findings.ts` (`buildAiRules`: evidence must appear in the
+  item's ingredient text or the finding is dropped; undeclared/unexplained
+  allergens computed in code; plausibility only beyond ±20%; banned-item
+  findings stay "needs verification" unless the ingredient text names the
+  item; AI unavailable → R1/R2/R3a/A.5 "Not assessed"). R2 also has a
+  no-AI cross-check (same item name declared with different allergens
+  elsewhere). `mock-ai.ts` is **made-up keyword output for the preview
+  only**.
+- **Dev preview:** `/menu-audit/preview` (404 in production) renders the
+  report from `tests/fixtures/ginza-form3.xlsx` with mock AI; add `?ai=off`
+  for the "AI unavailable" version. Logo: `public/brand/myschoolfood-logo.svg`
+  (+ `-small.svg` for the page header) — the supplied SVG is a PNG wrapped
+  in an SVG, so not a true vector.
+- **Done (step 3; live acceptance run PASSED on 15 Nov 2026):** a real run on the
+  reference workbook took 6 calls, ~28 s and ~US$0.25 on claude-sonnet-5-5; the
+  guardrails dropped 2 findings whose quotes weren't in the ingredients; R3a
+  flagged protein as inadequate in 7 of the 9 listed combos (the spec's minimum
+  is 7, so the margin is thin - try MENU_AUDIT_MODEL=claude-opus-5-5 if that
+  ever regresses).
+  `lib/menu-audit/ai-review.ts` — `reviewMenu(menu)` de-duplicates items
+  (name + ingredients), sends them to Claude in batches of 25 (combos in
+  batches of 14), 4 at a time, and returns `{ai, error, usage}`. Model:
+  `claude-sonnet-5-5` by default (the spec says Sonnet is enough), overridable
+  with the `MENU_AUDIT_MODEL` env var (e.g. `claude-opus-5-5`). Uses the
+  SDK's structured outputs (zod schemas) so replies are always valid JSON.
+  **`temperature: 0` from the spec is NOT used** — current Claude models
+  reject any sampling parameter (400); steadiness comes from the fixed
+  schema + "quote the exact words" + the code-side guardrails. Forced
+  tool_choice is also rejected on these models, hence structured outputs.
+  Server-side refusal fallback (`fallbacks: "default"`) is switched on. Any
+  failed/refused/skipped batch makes the whole AI review `null`, so the
+  report says "Not assessed – AI review unavailable" instead of passing
+  things it never checked; truncated answers are split in half and retried.
+  Raw API errors are never shown to users. `ANTHROPIC_API_KEY` is read from
+  the environment only (server-side).
+- **Tests:** `npm test` (offline; includes `menu-audit-ai.test.ts` with a
+  stand-in model). `npm run test:live` runs the spec's real AI acceptance
+  checks (R1/R2/R3a) against the reference workbook — it calls the real API
+  and costs a little, so it only runs on request. The dev preview also has
+  `?ai=live` for the real review.
+- **Done (step 4): the public tool.** `/menu-audit` (`MenuAuditApp.tsx`: drag-drop
+  upload, live progress steps, then the report on the same page with a
+  "Download PDF" button; `robots: noindex`) calls `POST /api/menu-audit`
+  (`app/api/menu-audit/route.ts`, Node runtime, `maxDuration = 300`), which
+  streams one JSON event per line (`lib/menu-audit/pipeline.ts`: reading ->
+  rules -> ai -> report -> done). **No login, by the owner's choice.** Guards
+  (`lib/menu-audit/limits.ts`): .xlsx only, <= 4 MB, zip magic bytes, zip-bomb
+  check (entry count / unpacked size), 6 audits per visitor per hour
+  (`MENU_AUDIT_MAX_PER_HOUR`), 200 per server per day (`MENU_AUDIT_MAX_PER_DAY`),
+  at most 4 running at once. **The rate limits are in memory, so they are
+  best-effort on Vercel (each server instance counts separately)** - the real
+  spending cap is a monthly limit set in the Anthropic Console. Files are never
+  stored or logged; the upload page tells visitors the menu text is sent to
+  Anthropic. Real end-to-end run (dev, 15 Nov 2026): ~19 s, ~US$0.24.
+- **Region (undecided):** the spec wants Dubai (`dxb1`, fallback `bom1`), but
+  per the Next docs a per-route `preferredRegion` only works on Vercel for the
+  edge runtime, and this tool needs Node (exceljs). So it can only be set
+  project-wide (`vercel.json` `regions`, or Vercel > Settings > Functions),
+  which would also move the conference app's functions - not done. Decide
+  before launch (check where the Supabase project lives first).
+- **Not built yet:** optional step 5 (store reports, reviewer sign-off
+  workflow that removes the DRAFT watermark).
+- **Open risk:** with no login, the AI endpoint is a public, paid API call —
+  add size limits and rate limiting before it goes live.
+
 ## Conventions
 
 - Styling: no Tailwind — plain inline `style` objects plus a few shared
